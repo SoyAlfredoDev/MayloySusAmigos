@@ -1,40 +1,111 @@
 @import "tailwindcss";
+@config "../../tailwind.config.js";
+
+/* ─── Design Tokens: Mailo y sus Amigos ──────────────────────────────────── */
 
 :root {
-  --primary: #14B8A6;
-  --primary-foreground: #ffffff;
-  --secondary: #ffffff;
-  --secondary-foreground: #14B8A6;
   --background: #ffffff;
-  --foreground: #374151;
-  --accent: #F0FDFA;
-  --accent-foreground: #115E59;
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
-  --card: #ffffff;
-  --card-foreground: #374151;
-  --border: #E5E7EB;
+  --foreground: #1a1a2e;
+
+  /* Primario — Turquesa */
+  --milo-primary: #15a1b3;
+  --milo-primary-light: #0fa7bf;
+  --milo-primary-dark: #0c8494;
+
+  /* Acento — Rojo clínico */
+  --clinical-accent: #e63946;
+  --clinical-accent-dark: #c92d39;
+
+  /* Superficies */
+  --surface-soft: #f8fafb;
+  --surface-muted: #eef2f4;
+
+  /* Bordes cartoon/pop */
+  --border-pop: 2px solid #1a1a2e;
+  --radius-milo: 1.25rem;
 }
 
 @theme inline {
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-border: var(--border);
-  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+
+  /* Paleta Mailo (Tailwind v4 @theme) */
+  --color-milo-50: #e6f7f9;
+  --color-milo-100: #b3e8ef;
+  --color-milo-200: #80d9e5;
+  --color-milo-300: #4dcadb;
+  --color-milo-400: #26bdd1;
+  --color-milo-500: #15a1b3;
+  --color-milo-600: #0fa7bf;
+  --color-milo-700: #0c8494;
+  --color-milo-800: #096170;
+  --color-milo-900: #063e4c;
+
+  --color-clinical-50: #fef2f3;
+  --color-clinical-100: #fde0e3;
+  --color-clinical-200: #fab8be;
+  --color-clinical-300: #f59099;
+  --color-clinical-400: #ef5f6c;
+  --color-clinical-500: #e63946;
+  --color-clinical-600: #c92d39;
+  --color-clinical-700: #a8232e;
+
+  --color-ink: #1a1a2e;
+  --color-ink-muted: #4a4a68;
+  --color-ink-light: #7a7a96;
+
+  --color-surface: #ffffff;
+  --color-surface-soft: #f8fafb;
+  --color-surface-muted: #eef2f4;
+
+  --font-sans: var(--font-nunito);
+  --radius-milo: 1.25rem;
 }
 
 body {
-  background-color: var(--background);
+  background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-nunito), system-ui, sans-serif;
+}
+
+/* Utilidades de marca */
+.btn-primary {
+  @apply inline-flex items-center justify-center rounded-pill bg-milo-500 px-6 py-3 font-semibold text-white transition-all hover:bg-milo-600 active:scale-[0.98];
+}
+
+.btn-cta {
+  @apply inline-flex items-center justify-center rounded-pill bg-clinical-500 px-6 py-3 font-semibold text-white shadow-pop transition-all hover:bg-clinical-600 active:scale-[0.98];
+}
+
+.card-milo {
+  @apply rounded-milo border-2 border-ink/10 bg-surface p-6 shadow-card transition-shadow hover:shadow-card-hover;
+}
+
+.section-title {
+  @apply text-2xl font-bold text-ink md:text-3xl;
+}
+
+.badge-milo {
+  @apply inline-flex items-center rounded-pill bg-milo-100 px-3 py-1 text-sm font-medium text-milo-800;
+}
+
+/* Animaciones de marca */
+@keyframes milo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes milo-pulse-soft {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-milo-float {
+  animation: milo-float 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-milo-float {
+    animation: none;
+  }
 }

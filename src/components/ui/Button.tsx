@@ -1,45 +1,56 @@
-"use client";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import type { ComponentPropsWithoutRef } from "react";
 
-import * as React from "react";
-import { motion, HTMLMotionProps } from "framer-motion";
+type ButtonVariant = "primary" | "cta" | "ghost";
+type ButtonSize = "sm" | "md";
 
-interface ButtonProps extends HTMLMotionProps<"button"> {
-  variant?: "primary" | "secondary" | "outline" | "ghost";
-  size?: "sm" | "md" | "lg";
-  children: React.ReactNode;
+export interface ButtonProps extends ComponentPropsWithoutRef<"button"> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  href?: string;
+  external?: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "primary", size = "md", children, ...props }, ref) => {
-    const baseStyles = "inline-flex items-center justify-center rounded-full font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
-    
-    const variants = {
-      primary: "bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary",
-      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/90 focus:ring-secondary",
-      outline: "border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary",
-      ghost: "hover:bg-muted text-foreground focus:ring-muted",
-    };
+const variantClass: Record<ButtonVariant, string> = {
+  primary: "btn-primary",
+  cta: "btn-cta",
+  ghost:
+    "inline-flex items-center justify-center rounded-pill px-4 py-2 font-semibold text-ink-muted hover:bg-surface-muted",
+};
 
-    const sizes = {
-      sm: "h-9 px-4 text-sm",
-      md: "h-11 px-6 text-base",
-      lg: "h-14 px-8 text-lg",
-    };
+const sizeClass: Record<ButtonSize, string> = {
+  sm: "text-sm px-4 py-2",
+  md: "",
+};
 
+export function Button({
+  variant = "primary",
+  size = "md",
+  href,
+  external,
+  className,
+  children,
+  ...props
+}: ButtonProps) {
+  const classes = cn(variantClass[variant], sizeClass[size], className);
+
+  if (href) {
     return (
-      <motion.button
-        ref={ref}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className || ""}`}
-        {...props}
+      <Link
+        href={href}
+        className={classes}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
       >
         {children}
-      </motion.button>
+      </Link>
     );
   }
-);
 
-Button.displayName = "Button";
-
-export { Button };
+  return (
+    <button type="button" className={classes} {...props}>
+      {children}
+    </button>
+  );
+}

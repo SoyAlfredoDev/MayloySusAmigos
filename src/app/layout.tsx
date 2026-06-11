@@ -5,13 +5,23 @@ import "./globals.css";
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
-  display: "swap",
+  weight: ["400", "500", "600",  "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: "Milo y sus amigos | Veterinaria y Peluquería",
+  title: {
+    default: "Mailo y sus Amigos | Clínica Veterinaria, Pet Shop y Peluquería",
+    template: "%s | Mailo y sus Amigos",
+  },
   description:
-    "Cuidamos y embellecemos a tus mascotas con amor. Servicios de veterinaria y peluquería profesional para perros y gatos.",
+    "Plataforma integral para el cuidado de tu mascota en Chile. Tienda online, consultas veterinarias y peluquería canina.",
+  keywords: [
+    "veterinaria Chile",
+    "pet shop",
+    "peluquería canina",
+    "citas veterinarias",
+    "productos para mascotas",
+  ],
 };
 
 export default function RootLayout({
@@ -20,10 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${nunito.variable} antialiased`}
-      >
+    <html lang="es-CL" className={`${nunito.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-surface-soft text-ink">
         {children}
       </body>
     </html>

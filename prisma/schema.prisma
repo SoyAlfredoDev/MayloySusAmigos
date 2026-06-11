@@ -1,0 +1,384 @@
+// Mailo y sus Amigos — Esquema de base de datos (Neon Postgres)
+// Documentación: docs/ARCHITECTURE.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  CLIENT
+  STAFF
+  ADMIN
+}
+
+enum PetSpecies {
+  DOG
+  CAT
+  BIRD
+  RODENT
+  OTHER
+}
+
+enum PetSize {
+  TOY
+  SMALL
+  MEDIUM
+  LARGE
+  GIANT
+}
+
+enum ServiceModule {
+  VETERINARY
+  GROOMING
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  FAILED
+  REFUNDED
+}
+
+enum PetTypeFilter {
+  DOG
+  CAT
+  BIRD
+  FISH
+  ALL
+}
+
+enum MedicalRecordType {
+  VACCINE
+  CHECKUP
+  SURGERY
+  TREATMENT
+  LAB_RESULT
+  OTHER
+}
+
+// ─── Usuarios y mascotas ─────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  rut       String?  @unique // RUT chileno (opcional)
+  password  String?  // null si usa OAuth
+  role      UserRole @default(CLIENT)
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pets         Pet[]
+  orders       Order[]
+  appointments Appointment[]
+  addresses    Address[]
+  cart         Cart?
+
+  @@map("users")
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  label      String  @default("Casa")
+  street     String
+  commune    String  // Comuna (Chile)
+  city       String  @default("Santiago")
+  region     String
+  postalCode String?
+  isDefault  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model Pet {
+  id        String     @id @default(cuid())
+  userId    String
+  name      String
+  species   PetSpecies
+  breed     String?
+  birthDate DateTime?
+  weightKg  Float?
+  size      PetSize?   // Relevante para peluquería
+  photoUrl  String?
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicalRecords MedicalRecord[]
+  appointments   Appointment[]
+
+  @@map("pets")
+}
+
+model MedicalRecord {
+  id               String            @id @default(cuid())
+  petId            String
+  type             MedicalRecordType
+  title            String
+  description      String?
+  date             DateTime
+  veterinarianName String?
+  documentUrl      String?
+  createdAt        DateTime          @default(now())
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@map("medical_records")
+}
+
+// ─── E-Commerce ──────────────────────────────────────────────────────────────
+
+model Brand {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  logoUrl     String?
+  products    Product[]
+
+  @@map("brands")
+}
+
+model Category {
+  id       String     @id @default(cuid())
+  name     String
+  slug     String     @unique
+  parentId String?
+  imageUrl String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  brandId        String?
+  categoryId     String?
+  name           String
+  slug           String        @unique
+  description    String?
+  price          Int           // CLP (sin decimales)
+  compareAtPrice Int?
+  sku            String        @unique
+  stock          Int           @default(0)
+  petType        PetTypeFilter @default(ALL)
+  imageUrls      String[]
+  isActive       Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  brand      Brand?      @relation(fields: [brandId], references: [id])
+  category   Category?   @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@index([petType, isActive])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int    @default(1)
+
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  userId          String
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  subtotal        Int
+  shippingCost    Int           @default(0)
+  total           Int
+  shippingAddress Json          // { street, commune, city, region, postalCode }
+  transbankToken  String?
+  transbankBuyOrder String?     @unique
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Int
+  total     Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─── Agendamiento ────────────────────────────────────────────────────────────
+
+model Specialty {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  module      ServiceModule @default(VETERINARY)
+  professionals ProfessionalSpecialty[]
+  services    Service[]
+
+  @@map("specialties")
+}
+
+model Service {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  description     String?
+  module          ServiceModule
+  durationMinutes Int
+  price           Int           // CLP
+  petSize         PetSize?      // Solo peluquería: precio según tamaño
+  specialtyId     String?
+  isActive        Boolean       @default(true)
+
+  specialty    Specialty?    @relation(fields: [specialtyId], references: [id])
+  appointments Appointment[]
+
+  @@map("services")
+}
+
+model Professional {
+  id        String        @id @default(cuid())
+  userId    String?       @unique // Vinculado a User STAFF si aplica
+  name      String
+  email     String        @unique
+  module    ServiceModule
+  bio       String?
+  photoUrl  String?
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+
+  specialties      ProfessionalSpecialty[]
+  schedules        Schedule[]
+  blockedSlots     BlockedSlot[]
+  appointments     Appointment[]
+
+  @@map("professionals")
+}
+
+model ProfessionalSpecialty {
+  professionalId String
+  specialtyId    String
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  specialty    Specialty    @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@id([professionalId, specialtyId])
+  @@map("professional_specialties")
+}
+
+// Horario semanal recurrente del profesional
+model Schedule {
+  id             String @id @default(cuid())
+  professionalId String
+  dayOfWeek      Int    // 0 = Domingo … 6 = Sábado
+  startTime      String // "09:00" (HH:mm, America/Santiago)
+  endTime        String // "18:00"
+  slotMinutes    Int    @default(30)
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, dayOfWeek, startTime])
+  @@map("schedules")
+}
+
+// Bloqueos puntuales (vacaciones, emergencias)
+model BlockedSlot {
+  id             String   @id @default(cuid())
+  professionalId String
+  startAt        DateTime
+  endAt          DateTime
+  reason         String?
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, startAt, endAt])
+  @@map("blocked_slots")
+}
+
+model Appointment {
+  id             String            @id @default(cuid())
+  userId         String
+  petId          String
+  professionalId String
+  serviceId      String
+  module         ServiceModule
+  scheduledAt    DateTime
+  durationMinutes Int
+  status         AppointmentStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  pet          Pet          @relation(fields: [petId], references: [id])
+  professional Professional @relation(fields: [professionalId], references: [id])
+  service      Service      @relation(fields: [serviceId], references: [id])
+
+  @@unique([professionalId, scheduledAt])
+  @@index([userId, status])
+  @@map("appointments")
+}

@@ -1,0 +1,44 @@
+---
+description: Arquitectura de componentes por dominio (tienda, veterinaria, peluquería)
+globs: src/components/**/*,src/app/**/*
+alwaysApply: false
+---
+
+# Component Architecture — Mailo y sus Amigos
+
+Referencia completa: `docs/COMPONENT_ARCHITECTURE.md`
+
+## Capas (de abajo hacia arriba)
+
+1. `ui/` — primitivos sin lógica de negocio
+2. `shared/` — layout y navegación transversal
+3. Dominio — `shop/`, `booking/`, `account/`, `marketing/`
+4. `app/**/page.tsx` — solo orquestación (fetch + composición)
+
+## Dominios
+
+| Dominio | Carpeta | Backend |
+|---------|---------|---------|
+| Tienda | `shop/` | Medusa |
+| Veterinaria | `booking/veterinary/` + `booking/shared/` | Prisma |
+| Peluquería | `booking/grooming/` + `booking/shared/` | Prisma |
+| Cuenta | `account/` | Prisma + Medusa |
+
+## Reglas de importación
+
+- `ui` NO importa de dominios
+- `booking/veterinary` NO importa de `booking/grooming` (y viceversa)
+- Ambos booking importan de `booking/shared/`
+- Páginas usan `PageContainer` + componentes de dominio
+
+## Al agregar UI nueva
+
+- ¿Se usa en 2+ dominios? → `ui/` o `shared/`
+- ¿Solo tienda? → `shop/`
+- ¿Wizard compartido vet+pelu? → `booking/shared/`
+- ¿Solo veterinaria? → `booking/veterinary/`
+- ¿Solo peluquería? → `booking/grooming/`
+
+## Layouts
+
+Usar `SiteShell` con variante (`marketing` | `shop` | `booking`). No duplicar Header+Footer en layouts.

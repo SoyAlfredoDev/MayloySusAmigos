@@ -1,20 +1,21 @@
-"use client";
+import { cn } from "@/lib/utils";
+import type { ComponentPropsWithoutRef } from "react";
 
-import { motion } from "framer-motion";
-
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
+export interface CardProps extends ComponentPropsWithoutRef<"div"> {
+  hover?: boolean;
 }
 
-export function Card({ children, className }: CardProps) {
+export function Card({ hover = false, className, children, ...props }: CardProps) {
   return (
-    <motion.div
-      whileHover={{ y: -5 }}
-      transition={{ type: "spring", stiffness: 300 }}
-      className={`bg-card text-card-foreground p-6 rounded-2xl shadow-lg border border-border/50 ${className || ""}`}
+    <div
+      className={cn(
+        "card-milo",
+        hover && "transition-shadow hover:border-milo-300 hover:shadow-card-hover",
+        className,
+      )}
+      {...props}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

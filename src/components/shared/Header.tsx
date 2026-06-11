@@ -1,0 +1,76 @@
+"use client";
+
+import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
+import { siteConfig } from "@/config/site";
+import { cn } from "@/lib/utils";
+
+interface HeaderProps {
+  className?: string;
+}
+
+export function Header({ className }: HeaderProps) {
+  const reduce = useReducedMotion();
+
+  return (
+    <motion.header
+      initial={reduce ? false : { opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className={cn(
+        "sticky top-0 z-50 border-b-2 border-ink/10 bg-surface/95 backdrop-blur-sm",
+        className,
+      )}
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-6">
+        <Link href="/" className="flex items-center gap-2">
+          <motion.span
+            className="text-xl font-extrabold text-milo-600 md:text-2xl"
+            whileHover={reduce ? undefined : { scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          >
+            {siteConfig.name}
+          </motion.span>
+        </Link>
+
+        <nav className="hidden items-center gap-6 md:flex">
+          {siteConfig.nav.main.map((item, i) => (
+            <motion.div
+              key={item.href}
+              initial={reduce ? false : { opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.05, duration: 0.35 }}
+            >
+              <Link
+                href={item.href}
+                className="relative font-semibold text-ink-muted transition-colors hover:text-milo-600"
+              >
+                {item.label}
+                <motion.span
+                  className="absolute -bottom-1 left-0 h-0.5 w-full origin-left rounded-full bg-milo-500"
+                  initial={{ scaleX: 0 }}
+                  whileHover={{ scaleX: 1 }}
+                  transition={{ duration: 0.25 }}
+                />
+              </Link>
+            </motion.div>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <Link
+            href="/tienda/carrito"
+            className="rounded-pill px-3 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-muted"
+          >
+            Carrito
+          </Link>
+          <motion.div whileHover={reduce ? undefined : { scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+            <Link href="/cuenta/perfil" className="btn-cta text-sm">
+              Mi cuenta
+            </Link>
+          </motion.div>
+        </div>
+      </div>
+    </motion.header>
+  );
+}
