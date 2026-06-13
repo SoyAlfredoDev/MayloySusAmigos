@@ -19,10 +19,10 @@ Referencia completa: `docs/COMPONENT_ARCHITECTURE.md`
 
 | Dominio | Carpeta | Backend |
 |---------|---------|---------|
-| Tienda | `shop/` | Medusa |
+| Tienda | `shop/` | Prisma/Neon (fase futura) |
 | Veterinaria | `booking/veterinary/` + `booking/shared/` | Prisma |
 | Peluquería | `booking/grooming/` + `booking/shared/` | Prisma |
-| Cuenta | `account/` | Prisma + Medusa |
+| Cuenta | `account/` | Prisma |
 
 ## Reglas de importación
 

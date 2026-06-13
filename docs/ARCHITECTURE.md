@@ -5,13 +5,13 @@
 | Capa | Tecnología |
 |------|------------|
 | Framework | Next.js 16 (App Router, Server Components) |
-| E-Commerce | **Medusa v2** (headless) + Medusa Cloud |
+| Base de datos | **PostgreSQL (Neon)** + **Prisma** |
+| Pagos | **Mercado Pago** y/o **Stripe** |
 | Estilos | Tailwind CSS v4 + `tailwind.config.js` |
 | Animaciones | Framer Motion |
-| Base de datos (booking) | Neon (Postgres) + Prisma |
-| Base de datos (shop) | Postgres provisionado por Medusa Cloud |
-| Despliegue | Vercel (app) + Medusa Cloud (e-commerce) |
-| Pagos | Medusa Payment Module → Transbank (próximo paso) |
+| Despliegue | Vercel |
+
+Referencia completa: [STACK.md](./STACK.md)
 
 ---
 
@@ -49,14 +49,16 @@ src/
 │   │   ├── products/
 │   │   ├── appointments/
 │   │   ├── cart/
-│   │   └── webhooks/transbank/
+│   │   └── webhooks/
+│   │       ├── stripe/
+│   │       └── mercado-pago/
 │   ├── layout.tsx                # Root layout
 │   └── globals.css
 │
 ├── components/                   # Ver docs/COMPONENT_ARCHITECTURE.md
 │   ├── ui/                       # Primitivos reutilizables (Button, Card…)
 │   ├── shared/                   # Layout transversal (SiteShell, Header…)
-│   ├── shop/                     # Dominio tienda / Medusa
+│   ├── shop/                     # Dominio tienda (UI; catálogo vía Prisma en fases futuras)
 │   ├── booking/
 │   │   ├── shared/               # Compartido vet + peluquería
 │   │   ├── veterinary/           # Solo veterinaria
@@ -67,7 +69,7 @@ src/
 ├── lib/
 │   ├── db/                       # Prisma client singleton
 │   ├── auth/                     # Sesión y permisos
-│   ├── payments/                 # Integración Transbank
+│   ├── payments/                 # Mercado Pago + Stripe
 │   ├── booking/                  # Lógica de slots disponibles
 │   └── utils.ts
 │
@@ -86,7 +88,7 @@ prisma/
 - **`(shop)`** — Catálogo optimizado para SEO (Server Components, metadata dinámica, ISR).
 - **`(booking)`** — Flujos interactivos de reserva (Client Components + Server Actions).
 - **`(account)`** — Área autenticada del Pet Parent.
-- **`api/`** — Webhooks (Transbank), endpoints REST para integraciones externas.
+- **`api/`** — Webhooks de pagos (Stripe, Mercado Pago) y endpoints REST.
 
 ---
 
@@ -188,11 +190,11 @@ Usuario → Selecciona mascota → Servicio/especialidad → Profesional
 ### E-Commerce
 
 ```
-Catálogo (SSR) → Filtros → Detalle → Carrito → Checkout → Webpay → Webhook → Order PAID
+Catálogo (SSR) → Filtros → Detalle → Carrito → Checkout → Mercado Pago / Stripe → Webhook → Order PAID
 ```
 
 ---
 
 ## Variables de entorno
 
-Ver `.env.example` para `DATABASE_URL`, auth, Transbank y URLs públicas.
+Ver `.env.example` para `DATABASE_URL`, auth, Mercado Pago, Stripe y URLs públicas.

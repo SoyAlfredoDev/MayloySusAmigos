@@ -6,7 +6,7 @@ export default function CheckoutPage() {
     <PageContainer size="narrow">
       <SectionHeader
         title="Checkout"
-        description="Pasarela Webpay/Transbank — Fase 2"
+        description="Mercado Pago / Stripe — Fase 2"
       />
     </PageContainer>
   );

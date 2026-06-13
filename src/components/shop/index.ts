@@ -1,7 +1,8 @@
+export { AddToCartButton, type AddToCartButtonProps } from "./AddToCartButton";
 export { CategoryNav, type CategoryNavProps } from "./CategoryNav";
 export { CategorySection, type CategorySectionProps } from "./CategorySection";
-export { MedusaStatusBanner, type MedusaError } from "./MedusaStatusBanner";
 export { ProductCard, type ProductCardProps } from "./ProductCard";
 export { ProductDetail, type ProductDetailProps } from "./ProductDetail";
 export { ProductGrid, type ProductGridProps } from "./ProductGrid";
+export { ProductImage, type ProductImageProps } from "./ProductImage";
 export { ShopPageHeader } from "./ShopPageHeader";

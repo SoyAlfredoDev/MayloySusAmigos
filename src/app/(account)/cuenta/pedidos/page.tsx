@@ -6,7 +6,7 @@ export default function OrdersPage() {
   return (
     <AccountPageHeader
       title="Mis pedidos"
-      description="Historial de compras — Medusa (Fase 2)"
+      description="Historial de compras (Fase 2)"
     />
   );
 }

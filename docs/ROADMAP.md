@@ -51,8 +51,8 @@ Plan por fases priorizando valor de negocio, time-to-market y dependencias técn
 - CRUD productos, categorías, marcas (panel admin)
 - Carrito persistente por usuario
 - Checkout con dirección de envío (comunas Chile)
-- Integración Transbank Webpay Plus (ambiente integración → producción)
-- Webhook de confirmación de pago → actualizar `Order.status`
+- Integración **Mercado Pago** (Checkout Pro / API) y/o **Stripe** (Checkout / Payment Intents)
+- Webhooks de confirmación de pago → actualizar `Order.status` y `paymentProvider`
 
 ### Frontend
 - Catálogo SSR con filtros (tipo mascota, marca, categoría)
@@ -61,7 +61,7 @@ Plan por fases priorizando valor de negocio, time-to-market y dependencias técn
 - `/cuenta/pedidos` con historial y tracking básico
 
 ### Criterio de éxito
-- Compra end-to-end con Webpay en integración.
+- Compra end-to-end con Mercado Pago o Stripe en modo prueba (sandbox).
 - Stock se decrementa al confirmar pago.
 
 ---

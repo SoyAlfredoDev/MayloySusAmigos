@@ -1,9 +1,9 @@
 import { ProductGrid } from "@/components/shop/ProductGrid";
-import type { StoreCategory, StoreProduct } from "@/lib/medusa/sdk";
+import type { ShopCategory, ShopProduct } from "@/types/shop";
 
 export interface CategorySectionProps {
-  category: StoreCategory;
-  products: StoreProduct[];
+  category: ShopCategory;
+  products: ShopProduct[];
 }
 
 export function CategorySection({ category, products }: CategorySectionProps) {

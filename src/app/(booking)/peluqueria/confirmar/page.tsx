@@ -1,13 +1,24 @@
+import { AppointmentConfirmation } from "@/components/booking";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { SectionHeader } from "@/components/ui/SectionHeader";
+import { fetchAppointment } from "@/actions/booking/appointments";
 
-export default function GroomingConfirmPage() {
+export const dynamic = "force-dynamic";
+
+export const metadata = {
+  title: "Reserva confirmada — Peluquería",
+};
+
+export default async function GroomingConfirmPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string }>;
+}) {
+  const { id } = await searchParams;
+  const appointment = id ? await fetchAppointment(id) : null;
+
   return (
     <PageContainer size="narrow">
-      <SectionHeader
-        title="Confirmar reserva peluquería"
-        description="Resumen y confirmación — Fase 1"
-      />
+      <AppointmentConfirmation appointment={appointment} />
     </PageContainer>
   );
 }

@@ -10,27 +10,19 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "medusa:install": "cd medusa-backend && npm install",
-    "medusa:dev": "cd medusa-backend && npm run dev",
-    "medusa:backend": "cd medusa-backend && npm run backend:dev",
-    "medusa:storefront": "cd medusa-backend && npm run storefront:dev",
-    "medusa:migrate": "cd medusa-backend/apps/backend && npx medusa db:migrate",
-    "medusa:admin-user": "cd medusa-backend/apps/backend && npx medusa user -e admin@mailoyusamigos.cl -p MailoAdmin2026!",
-    "medusa:setup": "npm run medusa:migrate && npm run medusa:admin-user",
-    "medusa:seed-catalog": "cd medusa-backend/apps/backend && npx medusa exec ./src/scripts/seed-pet-catalog.ts",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@medusajs/js-sdk": "^2.15.5",
-    "@medusajs/types": "^2.15.5",
+    "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "framer-motion": "^12.40.0",
     "next": "16.2.9",
+    "next-cloudinary": "^6.17.5",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.6.0"
@@ -44,6 +36,7 @@
     "eslint-config-next": "16.2.9",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }

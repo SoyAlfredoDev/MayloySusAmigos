@@ -1,5 +1,9 @@
 export const siteConfig = {
   name: "Mailo y sus Amigos",
+  logo: {
+    src: "/images/logo-mailo-y-sus-amigos.png",
+    alt: "Mailo y sus Amigos — Clínica veterinaria, pet shop y peluquería",
+  },
   description:
     "Clínica veterinaria, pet shop y peluquería canina en Chile.",
   url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
@@ -14,8 +18,6 @@ export const siteConfig = {
   admin: {
     label: "Panel Admin",
     href: "/admin",
-    medusaUrl:
-      process.env.NEXT_PUBLIC_MEDUSA_ADMIN_URL ?? "http://localhost:9000/app",
   },
   nav: {
     main: [

@@ -1,3 +1,4 @@
+export { FeaturedProductsSection } from "./FeaturedProductsSection";
 export { FloatingPaws } from "./FloatingPaws";
 export { HeroSection } from "./HeroSection";
 export { HeroVisual } from "./HeroVisual";

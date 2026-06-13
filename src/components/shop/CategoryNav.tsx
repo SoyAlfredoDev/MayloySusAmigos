@@ -1,13 +1,13 @@
 import Link from "next/link";
 import clsx from "clsx";
-import type { StoreCategory } from "@/lib/medusa/sdk";
+import type { ShopCategory } from "@/types/shop";
 
 export interface CategoryNavProps {
-  categories: StoreCategory[];
-  activeHandle?: string;
+  categories: ShopCategory[];
+  activeSlug?: string;
 }
 
-export function CategoryNav({ categories, activeHandle }: CategoryNavProps) {
+export function CategoryNav({ categories, activeSlug }: CategoryNavProps) {
   if (categories.length === 0) return null;
 
   return (
@@ -19,7 +19,7 @@ export function CategoryNav({ categories, activeHandle }: CategoryNavProps) {
         href="/tienda"
         className={clsx(
           "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
-          !activeHandle
+          !activeSlug
             ? "bg-milo-600 text-white"
             : "bg-milo-50 text-ink hover:bg-milo-100",
         )}
@@ -29,10 +29,10 @@ export function CategoryNav({ categories, activeHandle }: CategoryNavProps) {
       {categories.map((category) => (
         <Link
           key={category.id}
-          href={`/tienda?categoria=${category.handle}`}
+          href={`/tienda?categoria=${category.slug}`}
           className={clsx(
             "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
-            activeHandle === category.handle
+            activeSlug === category.slug
               ? "bg-milo-600 text-white"
               : "bg-milo-50 text-ink hover:bg-milo-100",
           )}

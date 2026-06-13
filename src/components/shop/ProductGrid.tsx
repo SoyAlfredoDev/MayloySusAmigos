@@ -1,9 +1,9 @@
 import clsx from "clsx";
 import { ProductCard } from "@/components/shop/ProductCard";
-import type { StoreProduct } from "@/lib/medusa/sdk";
+import type { ShopProduct } from "@/types/shop";
 
 export interface ProductGridProps {
-  products: StoreProduct[];
+  products: ShopProduct[];
   className?: string;
 }
 

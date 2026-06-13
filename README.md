@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mailo y sus Amigos
 
-## Getting Started
+Plataforma web para clínica veterinaria, pet shop y peluquería canina en Chile.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** — App Router, TypeScript, Server Components
+- **PostgreSQL (Neon)** + **Prisma** — datos de citas, mascotas, cuenta y tienda
+- **Mercado Pago / Stripe** — pagos del pet shop (Fase 2)
+- **Tailwind CSS v4** + **Framer Motion**
+
+Documentación: [docs/STACK.md](./docs/STACK.md)
+
+## Desarrollo
 
 ```bash
+cp .env.example .env.local
+# Configura DATABASE_URL con tu proyecto Neon
+
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Base de datos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env
+# Pega credenciales de un proyecto/rama Neon DEDICADO a Mailo (ver docs/NEON.md)
 
-## Learn More
+npm run db:migrate    # primera vez: crea tablas en la base nueva
+npm run db:studio     # interfaz visual
+```
 
-To learn more about Next.js, take a look at the following resources:
+**No uses la misma base de otro proyecto activo.** Crea un proyecto nuevo en Neon o una rama `mailo-dev`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run build
+npm start
+```
 
-## Deploy on Vercel
+## Estructura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Ruta | Módulo |
+|------|--------|
+| `/` | Landing |
+| `/veterinaria` | Agendamiento veterinaria |
+| `/peluqueria` | Agendamiento peluquería |
+| `/tienda` | Pet shop |
+| `/cuenta/*` | Panel del cliente |
+| `/admin` | Panel administrativo (futuro) |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Más detalle en [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) y [docs/ROADMAP.md](./docs/ROADMAP.md).

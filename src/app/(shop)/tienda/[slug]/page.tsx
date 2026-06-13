@@ -1,6 +1,7 @@
 import { PageContainer } from "@/components/shared/PageContainer";
-import { ProductDetail } from "@/components/shop";
-import { getRegionByCountry, medusa } from "@/lib/medusa/sdk";
+import { ProductDetail, ShopPageHeader } from "@/components/shop";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { getProductBySlug } from "@/lib/shop/queries";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({
@@ -9,8 +10,10 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const product = await getProductBySlug(slug);
   return {
-    title: slug.replace(/-/g, " "),
+    title: product?.title ?? slug.replace(/-/g, " "),
+    description: product?.description,
   };
 }
 
@@ -20,33 +23,13 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const product = await getProductBySlug(slug);
 
-  if (!process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY) {
-    notFound();
-  }
-
-  const region = await getRegionByCountry(
-    process.env.NEXT_PUBLIC_MEDUSA_REGION ?? "cl",
-  );
-
-  let product;
-  try {
-    const result = await medusa.store.product.list({
-      handle: slug,
-      region_id: region?.id,
-      fields: "*variants.calculated_price,+metadata",
-    });
-    product = result.products[0];
-  } catch {
-    notFound();
-  }
-
-  if (!product) {
-    notFound();
-  }
+  if (!product) notFound();
 
   return (
     <PageContainer>
+      <ShopPageHeader />
       <ProductDetail product={product} />
     </PageContainer>
   );

@@ -35,11 +35,13 @@ src/components/
 │   ├── PageTransition.tsx
 │   └── AccountSidebar.tsx
 │
-├── shop/                       # Dominio: Pet Shop (Medusa)
+├── shop/                       # Dominio: Pet Shop
 │   ├── ShopPageHeader.tsx
 │   ├── ProductCard.tsx
 │   ├── ProductGrid.tsx
-│   └── MedusaStatusBanner.tsx
+│   ├── ProductDetail.tsx
+│   ├── CategoryNav.tsx
+│   └── CategorySection.tsx
 │
 ├── booking/
 │   ├── shared/                 # Compartido vet + peluquería
@@ -64,7 +66,7 @@ src/components/
 ```
 ui          →  (solo React, lib/utils)
 shared      →  ui, config/site
-shop        →  ui, shared, lib/medusa
+shop        →  ui, shared, types/shop
 booking/*   →  ui, shared, lib/booking (futuro)
 account     →  ui, shared
 marketing   →  ui, shared
@@ -74,7 +76,7 @@ app/pages   →  cualquier componente + lib + actions
 **Prohibido:**
 - `ui` importando de `shop`, `booking`, etc.
 - `booking/veterinary` importando de `booking/grooming` (y viceversa)
-- Lógica de fetch de Medusa dentro de componentes `ui` o `booking`
+- Lógica de fetch de catálogo dentro de componentes `ui` o `booking`
 
 ---
 
@@ -121,7 +123,7 @@ Los route groups usan `SiteShell` con variante de fondo:
 
 | Dominio | Carpeta componentes | Backend |
 |---------|---------------------|---------|
-| Tienda | `shop/` | Medusa |
+| Tienda | `shop/` | Prisma/Neon (fase futura) |
 | Veterinaria | `booking/veterinary/` + `booking/shared/` | Prisma/Neon |
 | Peluquería | `booking/grooming/` + `booking/shared/` | Prisma/Neon |
-| Cuenta | `account/` | Prisma + Medusa (pedidos) |
+| Cuenta | `account/` | Prisma/Neon |

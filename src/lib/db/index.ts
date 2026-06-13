@@ -1,13 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { getPooledDatabaseUrl } from "@/lib/env/database";
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString) {
-    throw new Error("DATABASE_URL no está configurada");
-  }
-
+  const connectionString = getPooledDatabaseUrl();
   const adapter = new PrismaNeon({ connectionString });
   return new PrismaClient({
     adapter,

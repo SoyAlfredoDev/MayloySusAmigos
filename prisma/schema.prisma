@@ -63,12 +63,29 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PaymentProvider {
+  MERCADO_PAGO
+  STRIPE
+}
+
 enum PetTypeFilter {
   DOG
   CAT
   BIRD
   FISH
   ALL
+}
+
+enum PetSex {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum ContactPreference {
+  EMAIL
+  PHONE
+  WHATSAPP
 }
 
 enum MedicalRecordType {
@@ -80,17 +97,24 @@ enum MedicalRecordType {
   OTHER
 }
 
-// ─── Usuarios y mascotas ─────────────────────────────────────────────────────
+// ─── Clientes (cuentas de usuario) ───────────────────────────────────────────
 
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
+  lastName  String?
   phone     String?
   rut       String?  @unique // RUT chileno (opcional)
   password  String?  // null si usa OAuth
   role      UserRole @default(CLIENT)
   avatarUrl String?
+  isActive  Boolean  @default(true)
+  emailVerified DateTime?
+  preferredContact ContactPreference @default(EMAIL)
+  marketingConsent Boolean @default(false)
+  notes     String?  // Notas internas del staff
+  lastLoginAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -100,6 +124,7 @@ model User {
   addresses    Address[]
   cart         Cart?
 
+  @@index([role, isActive])
   @@map("users")
 }
 
@@ -120,23 +145,33 @@ model Address {
 }
 
 model Pet {
-  id        String     @id @default(cuid())
-  userId    String
-  name      String
-  species   PetSpecies
-  breed     String?
-  birthDate DateTime?
-  weightKg  Float?
-  size      PetSize?   // Relevante para peluquería
-  photoUrl  String?
-  notes     String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          String     @id @default(cuid())
+  userId      String
+  name        String
+  species     PetSpecies
+  breed       String?
+  sex         PetSex     @default(UNKNOWN)
+  birthDate   DateTime?
+  weightKg    Float?
+  size        PetSize?   // Relevante para peluquería y productos
+  color       String?
+  microchipId String?
+  isNeutered  Boolean    @default(false)
+  allergies   String?
+  conditions  String?    // Condiciones médicas relevantes
+  photoUrl    String?
+  notes       String?
+  isActive    Boolean    @default(true)
+  deceasedAt  DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   medicalRecords MedicalRecord[]
   appointments   Appointment[]
 
+  @@index([userId, isActive])
+  @@index([species])
   @@map("pets")
 }
 
@@ -170,34 +205,51 @@ model Brand {
 }
 
 model Category {
-  id       String     @id @default(cuid())
-  name     String
-  slug     String     @unique
-  parentId String?
-  imageUrl String?
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  parentId    String?
+  imageUrl    String?
+  petType     PetTypeFilter @default(ALL)
+  sortOrder   Int           @default(0)
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
   parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
   children Category[] @relation("CategoryTree")
   products Product[]
 
+  @@index([isActive, sortOrder])
   @@map("categories")
 }
 
 model Product {
-  id             String        @id @default(cuid())
-  brandId        String?
-  categoryId     String?
-  name           String
-  slug           String        @unique
-  description    String?
-  price          Int           // CLP (sin decimales)
-  compareAtPrice Int?
-  sku            String        @unique
-  stock          Int           @default(0)
-  petType        PetTypeFilter @default(ALL)
-  imageUrls      String[]
-  isActive       Boolean       @default(true)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  brandId          String?
+  categoryId       String?
+  name             String
+  slug             String        @unique
+  shortDescription String?
+  description      String?
+  price            Int           // CLP (sin decimales)
+  compareAtPrice   Int?          // Precio tachado / oferta
+  costPrice        Int?          // Costo interno (margen)
+  sku              String        @unique
+  barcode          String?
+  stock            Int           @default(0)
+  lowStockThreshold Int          @default(5)
+  weightGrams      Int?          // Envío y logística
+  petType          PetTypeFilter @default(ALL)
+  imageUrls        String[]
+  tags             String[]
+  isActive         Boolean       @default(true)
+  isFeatured       Boolean       @default(false)
+  metaTitle        String?
+  metaDescription  String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   brand      Brand?      @relation(fields: [brandId], references: [id])
   category   Category?   @relation(fields: [categoryId], references: [id])
@@ -205,7 +257,8 @@ model Product {
   cartItems  CartItem[]
 
   @@index([petType, isActive])
-  @@index([categoryId])
+  @@index([categoryId, isActive])
+  @@index([isFeatured, isActive])
   @@map("products")
 }
 
@@ -242,8 +295,9 @@ model Order {
   shippingCost    Int           @default(0)
   total           Int
   shippingAddress Json          // { street, commune, city, region, postalCode }
-  transbankToken  String?
-  transbankBuyOrder String?     @unique
+  paymentProvider   PaymentProvider?
+  externalPaymentId String?       @unique // payment_intent (Stripe) o payment id (Mercado Pago)
+  checkoutSessionId String?       // checkout session / preference id
   notes           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
