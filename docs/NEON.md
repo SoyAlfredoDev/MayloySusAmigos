@@ -131,6 +131,26 @@ En el proyecto de Vercel de **Mailo**, agrega las variables de la **base nueva**
 
 No reutilices las variables del otro proyecto en Vercel.
 
+### Después de desconectar `neon-green-apple` (hotel)
+
+En **mailo-sus-amigos** → **Settings → Environment Variables**, agrega manualmente:
+
+| Variable | De dónde copiar |
+|----------|-----------------|
+| `DATABASE_URL` | `.env` línea pooled (`ep-cool-haze-...-pooler`) |
+| `DIRECT_URL` | `.env` línea directa (`ep-cool-haze` sin pooler) |
+| `NEXT_PUBLIC_APP_URL` | `https://mayloy-sus-amigos.vercel.app` |
+
+O desde terminal (tú ejecutas, no sube secretos por el chat):
+
+```bash
+npx vercel link --yes --project mailo-sus-amigos
+bash scripts/vercel-env-setup.sh
+npx vercel --prod
+```
+
+**Importante:** `DATABASE_URL` tiene prioridad sobre `MAILO_POSTGRES_URL`. Si quedaron variables viejas de `ep-empty-fog`, bórralas o asegúrate de que `DATABASE_URL` apunte a `ep-cool-haze`.
+
 ### Crear tablas en producción (obligatorio una vez)
 
 Si `/api/health/db` responde `The table public.categories does not exist`, la base de Vercel **no tiene migraciones aplicadas**.
