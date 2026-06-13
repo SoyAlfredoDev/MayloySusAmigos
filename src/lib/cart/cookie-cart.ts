@@ -56,3 +56,8 @@ export async function getCartItemCount(): Promise<number> {
   const cart = await readCart();
   return cart.reduce((sum, line) => sum + line.quantity, 0);
 }
+
+export async function clearCart(): Promise<void> {
+  const jar = await cookies();
+  jar.delete(CART_COOKIE);
+}

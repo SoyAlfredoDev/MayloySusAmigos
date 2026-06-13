@@ -4,7 +4,8 @@ import {
   veterinaryBookingConfig,
 } from "@/components/booking";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { getBookingUserId } from "@/lib/booking/session";
+import { auth } from "@/auth";
+import { getCurrentUserId } from "@/lib/auth/session";
 import {
   getProfessionals,
   getServices,
@@ -23,7 +24,8 @@ export default async function VeterinaryBookingPage() {
   const { badge, title, description, steps, stepAccent } =
     veterinaryBookingConfig;
 
-  const userId = await getBookingUserId();
+  const session = await auth();
+  const userId = await getCurrentUserId();
   const [specialties, services, professionals, initialPets] = await Promise.all([
     getSpecialties("VETERINARY"),
     getServices("VETERINARY"),
@@ -31,8 +33,16 @@ export default async function VeterinaryBookingPage() {
     userId ? getUserPets(userId) : Promise.resolve([]),
   ]);
 
+  const initialUser = session?.user?.id
+    ? {
+        id: session.user.id,
+        name: session.user.name ?? "Usuario",
+        email: session.user.email ?? "",
+      }
+    : null;
+
   return (
-    <PageContainer size="narrow">
+    <PageContainer>
       <BookingIntro badge={badge} title={title} description={description} />
       <BookingWizard
         config={{
@@ -45,6 +55,7 @@ export default async function VeterinaryBookingPage() {
         services={services}
         professionals={professionals}
         initialPets={initialPets}
+        initialUser={initialUser}
       />
     </PageContainer>
   );

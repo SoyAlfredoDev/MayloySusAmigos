@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
+import { AuthNav } from "@/components/auth";
+import { CartNavLink } from "@/components/shop/CartNavLink";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   className?: string;
+  cartItemCount?: number;
 }
 
-export function Header({ className }: HeaderProps) {
+export function Header({ className, cartItemCount = 0 }: HeaderProps) {
   const reduce = useReducedMotion();
 
   return (
@@ -70,17 +73,8 @@ export function Header({ className }: HeaderProps) {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/tienda/carrito"
-            className="rounded-pill px-3 py-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-surface-muted"
-          >
-            Carrito
-          </Link>
-          <motion.div whileHover={reduce ? undefined : { scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-            <Link href="/cuenta/perfil" className="btn-cta text-sm">
-              Mi cuenta
-            </Link>
-          </motion.div>
+          <CartNavLink initialCount={cartItemCount} />
+          <AuthNav />
         </div>
       </div>
     </motion.header>

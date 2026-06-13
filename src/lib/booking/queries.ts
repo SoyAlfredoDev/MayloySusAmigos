@@ -1,7 +1,7 @@
 import type { ServiceModule } from "@prisma/client";
 import { db } from "@/lib/db";
 import { computeAvailableSlots } from "@/lib/booking/availability";
-import { getZonedParts, zonedDateTimeToUtc } from "@/lib/booking/timezone";
+import { formatDateYmd, getZonedParts, zonedDateTimeToUtc } from "@/lib/booking/timezone";
 import type {
   AppointmentSummary,
   BookingPet,
@@ -13,16 +13,20 @@ import type {
 export async function getSpecialties(
   module: ServiceModule,
 ): Promise<BookingSpecialty[]> {
-  return db.specialty.findMany({
-    where: { module },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-    },
-  });
+  try {
+    return await db.specialty.findMany({
+      where: { module },
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+      },
+    });
+  } catch {
+    return [];
+  }
 }
 
 export async function getServices(
@@ -80,17 +84,19 @@ export async function getProfessionals(
 }
 
 export async function getUserPets(userId: string): Promise<BookingPet[]> {
-  return db.pet.findMany({
-    where: { userId, isActive: true },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      species: true,
-      breed: true,
-      size: true,
-    },
+  const rows = await db.petMembership.findMany({
+    where: { userId, pet: { isActive: true } },
+    include: { pet: true },
+    orderBy: [{ isPrimary: "desc" }, { pet: { name: "asc" } }],
   });
+
+  return rows.map((row) => ({
+    id: row.pet.id,
+    name: row.pet.name,
+    species: row.pet.species,
+    breed: row.pet.breed,
+    size: row.pet.size,
+  }));
 }
 
 export async function getAvailableSlotsForBooking(input: {
@@ -110,12 +116,13 @@ export async function getAvailableSlotsForBooking(input: {
   const dayStart = zonedDateTimeToUtc(input.dateYmd, "00:00");
   const dayEnd = zonedDateTimeToUtc(input.dateYmd, "23:59");
 
-  const [schedule, appointments, blockedSlots] = await Promise.all([
-    db.schedule.findFirst({
+  const [schedules, appointments, blockedSlots] = await Promise.all([
+    db.schedule.findMany({
       where: {
         professionalId: input.professionalId,
         dayOfWeek,
       },
+      orderBy: { startTime: "asc" },
     }),
     db.appointment.findMany({
       where: {
@@ -141,10 +148,52 @@ export async function getAvailableSlotsForBooking(input: {
   return computeAvailableSlots({
     dateYmd: input.dateYmd,
     durationMinutes: service.durationMinutes,
-    schedule,
+    schedules,
     appointments,
     blockedSlots,
   });
+}
+
+export type ProfessionalScheduleDay = {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  slotMinutes: number;
+};
+
+export async function getProfessionalSchedules(
+  professionalId: string,
+): Promise<ProfessionalScheduleDay[]> {
+  const rows = await db.schedule.findMany({
+    where: { professionalId },
+    orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+    select: {
+      dayOfWeek: true,
+      startTime: true,
+      endTime: true,
+      slotMinutes: true,
+    },
+  });
+
+  return rows;
+}
+
+export async function isSlotAvailableForBooking(input: {
+  professionalId: string;
+  serviceId: string;
+  scheduledAt: string;
+}): Promise<boolean> {
+  const scheduledDate = new Date(input.scheduledAt);
+  if (Number.isNaN(scheduledDate.getTime())) return false;
+
+  const dateYmd = formatDateYmd(scheduledDate);
+  const slots = await getAvailableSlotsForBooking({
+    professionalId: input.professionalId,
+    serviceId: input.serviceId,
+    dateYmd,
+  });
+
+  return slots.some((slot) => slot.startAt === scheduledDate.toISOString());
 }
 
 export async function getUserAppointments(

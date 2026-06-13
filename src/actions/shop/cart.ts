@@ -21,11 +21,12 @@ export async function addToCart(
   if (!product) return { ok: false, error: "Producto no encontrado." };
   if (product.stock < 1) return { ok: false, error: "Sin stock disponible." };
 
-  await addProductToCart(productId, quantity);
+  const lines = await addProductToCart(productId, quantity);
+  const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   revalidatePath("/tienda/carrito");
   revalidatePath("/tienda");
-  return { ok: true };
+  return { ok: true, itemCount };
 }
 
 export async function addToCartAction(formData: FormData): Promise<void> {

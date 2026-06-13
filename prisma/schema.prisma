@@ -97,6 +97,11 @@ enum MedicalRecordType {
   OTHER
 }
 
+enum PetMembershipRole {
+  OWNER
+  CAREGIVER
+}
+
 // ─── Clientes (cuentas de usuario) ───────────────────────────────────────────
 
 model User {
@@ -106,23 +111,25 @@ model User {
   lastName  String?
   phone     String?
   rut       String?  @unique // RUT chileno (opcional)
-  password  String?  // null si usa OAuth
+  password  String?  // bcrypt — nunca texto plano (Ley 19.628)
   role      UserRole @default(CLIENT)
   avatarUrl String?
   isActive  Boolean  @default(true)
   emailVerified DateTime?
   preferredContact ContactPreference @default(EMAIL)
   marketingConsent Boolean @default(false)
+  privacyConsentAt DateTime? // Consentimiento tratamiento datos (Ley 19.628 Chile)
   notes     String?  // Notas internas del staff
   lastLoginAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  pets         Pet[]
+  petMemberships PetMembership[]
   orders       Order[]
   appointments Appointment[]
   addresses    Address[]
   cart         Cart?
+  petsCreated  Pet[] @relation("PetCreatedBy")
 
   @@index([role, isActive])
   @@map("users")
@@ -146,7 +153,7 @@ model Address {
 
 model Pet {
   id          String     @id @default(cuid())
-  userId      String
+  createdById String?
   name        String
   species     PetSpecies
   breed       String?
@@ -166,13 +173,32 @@ model Pet {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdBy      User?           @relation("PetCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  memberships    PetMembership[]
   medicalRecords MedicalRecord[]
   appointments   Appointment[]
 
-  @@index([userId, isActive])
+  @@index([isActive])
   @@index([species])
   @@map("pets")
+}
+
+// Relación muchos-a-muchos: un usuario puede tener varias mascotas
+// y una mascota puede tener varios tutores/cuidadores.
+model PetMembership {
+  id        String            @id @default(cuid())
+  userId    String
+  petId     String
+  role      PetMembershipRole @default(OWNER)
+  isPrimary Boolean           @default(false)
+  createdAt DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet  Pet  @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, petId])
+  @@index([petId])
+  @@map("pet_memberships")
 }
 
 model MedicalRecord {

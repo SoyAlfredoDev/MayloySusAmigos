@@ -55,19 +55,27 @@ function generateDaySlots(
 export function computeAvailableSlots(input: {
   dateYmd: string;
   durationMinutes: number;
-  schedule: Schedule | null;
+  schedules: Schedule[];
   appointments: { scheduledAt: Date; durationMinutes: number; status: string }[];
   blockedSlots: { startAt: Date; endAt: Date }[];
   now?: Date;
 }): AvailableSlot[] {
-  const { dateYmd, durationMinutes, schedule, appointments, blockedSlots } =
-    input;
+  const {
+    dateYmd,
+    durationMinutes,
+    schedules,
+    appointments,
+    blockedSlots,
+  } = input;
   const now = input.now ?? new Date();
 
-  if (!schedule) return [];
+  if (schedules.length === 0) return [];
 
   const { dayOfWeek } = getZonedParts(zonedDateTimeToUtc(dateYmd, "12:00"));
-  if (schedule.dayOfWeek !== dayOfWeek) return [];
+  const daySchedules = schedules.filter(
+    (schedule) => schedule.dayOfWeek === dayOfWeek,
+  );
+  if (daySchedules.length === 0) return [];
 
   const busyFromAppointments: BusyInterval[] = appointments
     .filter((appt) => ACTIVE_STATUSES.has(appt.status))
@@ -82,7 +90,17 @@ export function computeAvailableSlots(input: {
   }));
 
   const busy = [...busyFromAppointments, ...busyFromBlocks];
-  const candidates = generateDaySlots(dateYmd, schedule, durationMinutes);
+
+  const candidateMap = new Map<number, Date>();
+  for (const schedule of daySchedules) {
+    for (const start of generateDaySlots(dateYmd, schedule, durationMinutes)) {
+      candidateMap.set(start.getTime(), start);
+    }
+  }
+
+  const candidates = [...candidateMap.values()].sort(
+    (a, b) => a.getTime() - b.getTime(),
+  );
 
   return candidates
     .filter((start) => {

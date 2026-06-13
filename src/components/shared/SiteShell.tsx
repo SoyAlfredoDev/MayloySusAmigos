@@ -1,5 +1,6 @@
 import { Footer } from "@/components/shared/Footer";
 import { Header } from "@/components/shared/Header";
+import { getCartItemCount } from "@/lib/cart/cookie-cart";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -16,10 +17,12 @@ export interface SiteShellProps {
   variant?: SiteShellVariant;
 }
 
-export function SiteShell({ children, variant = "shop" }: SiteShellProps) {
+export async function SiteShell({ children, variant = "shop" }: SiteShellProps) {
+  const cartItemCount = await getCartItemCount();
+
   return (
     <>
-      <Header />
+      <Header cartItemCount={cartItemCount} />
       <main className={cn("flex-1", mainBackground[variant])}>{children}</main>
       <Footer />
     </>

@@ -2,6 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { getPooledDatabaseUrl } from "@/lib/env/database";
 
+/** Bump when el schema Prisma cambia para invalidar el singleton en dev. */
+const PRISMA_SCHEMA_VERSION = "20250613150000_pet_memberships_auth";
+
 function createPrismaClient() {
   const connectionString = getPooledDatabaseUrl();
   const adapter = new PrismaNeon({ connectionString });
@@ -15,8 +18,18 @@ function createPrismaClient() {
 }
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma?: PrismaClient;
+  prismaSchemaVersion?: string;
 };
+
+if (
+  process.env.NODE_ENV !== "production" &&
+  globalForPrisma.prismaSchemaVersion !== PRISMA_SCHEMA_VERSION
+) {
+  void globalForPrisma.prisma?.$disconnect();
+  globalForPrisma.prisma = undefined;
+  globalForPrisma.prismaSchemaVersion = PRISMA_SCHEMA_VERSION;
+}
 
 export const db = globalForPrisma.prisma ?? createPrismaClient();
 

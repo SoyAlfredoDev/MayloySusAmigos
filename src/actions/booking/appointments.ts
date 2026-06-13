@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import type { ServiceModule } from "@prisma/client";
 import { db } from "@/lib/db";
-import { getBookingUserId } from "@/lib/booking/session";
+import { getCurrentUserId } from "@/lib/auth/session";
+import { userHasPetAccess } from "@/lib/auth/pets";
 import {
   getAppointmentById,
   getUserAppointments,
+  isSlotAvailableForBooking,
 } from "@/lib/booking/queries";
 import type { BookingActionResult } from "@/actions/booking/types";
 import type { AppointmentSummary } from "@/types/booking";
@@ -25,9 +27,9 @@ export async function createAppointment(input: {
   scheduledAt: string;
   notes?: string;
 }): Promise<BookingActionResult<{ appointmentId: string }>> {
-  const userId = await getBookingUserId();
+  const userId = await getCurrentUserId();
   if (!userId) {
-    return { ok: false, error: "Ingresa tus datos de contacto antes de confirmar." };
+    return { ok: false, error: "Inicia sesión o ingresa tus datos antes de confirmar." };
   }
 
   const scheduledAt = new Date(input.scheduledAt);
@@ -35,11 +37,9 @@ export async function createAppointment(input: {
     return { ok: false, error: "Horario inválido." };
   }
 
-  const [pet, service, professional] = await Promise.all([
-    db.pet.findFirst({
-      where: { id: input.petId, userId, isActive: true },
-      select: { id: true },
-    }),
+  const hasPet = await userHasPetAccess(userId, input.petId);
+
+  const [service, professional] = await Promise.all([
     db.service.findFirst({
       where: {
         id: input.serviceId,
@@ -58,12 +58,25 @@ export async function createAppointment(input: {
     }),
   ]);
 
-  if (!pet) return { ok: false, error: "Mascota no encontrada." };
+  if (!hasPet) return { ok: false, error: "Mascota no encontrada." };
   if (!service) return { ok: false, error: "Servicio no disponible." };
   if (!professional) return { ok: false, error: "Profesional no disponible." };
 
   if (scheduledAt.getTime() <= Date.now()) {
     return { ok: false, error: "El horario seleccionado ya pasó." };
+  }
+
+  const slotAvailable = await isSlotAvailableForBooking({
+    professionalId: input.professionalId,
+    serviceId: input.serviceId,
+    scheduledAt: input.scheduledAt,
+  });
+
+  if (!slotAvailable) {
+    return {
+      ok: false,
+      error: "Ese horario ya no está disponible. Elige otro.",
+    };
   }
 
   try {
@@ -94,7 +107,7 @@ export async function createAppointment(input: {
 }
 
 export async function fetchUserAppointments(): Promise<AppointmentSummary[]> {
-  const userId = await getBookingUserId();
+  const userId = await getCurrentUserId();
   if (!userId) return [];
   return getUserAppointments(userId);
 }
@@ -102,7 +115,7 @@ export async function fetchUserAppointments(): Promise<AppointmentSummary[]> {
 export async function fetchAppointment(
   id: string,
 ): Promise<AppointmentSummary | null> {
-  const userId = await getBookingUserId();
+  const userId = await getCurrentUserId();
   if (!userId) return null;
   return getAppointmentById(id, userId);
 }
@@ -110,7 +123,7 @@ export async function fetchAppointment(
 export async function cancelAppointment(
   appointmentId: string,
 ): Promise<BookingActionResult> {
-  const userId = await getBookingUserId();
+  const userId = await getCurrentUserId();
   if (!userId) return { ok: false, error: "Sesión no encontrada." };
 
   const appointment = await db.appointment.findFirst({

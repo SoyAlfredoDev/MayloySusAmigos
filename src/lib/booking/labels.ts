@@ -28,3 +28,28 @@ export const appointmentStatusLabels: Record<AppointmentStatus, string> = {
   COMPLETED: "Completada",
   NO_SHOW: "No asistió",
 };
+
+export const dayOfWeekLabels = [
+  "Domingo",
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
+] as const;
+
+export const dayOfWeekShortLabels = [
+  "Dom",
+  "Lun",
+  "Mar",
+  "Mié",
+  "Jue",
+  "Vie",
+  "Sáb",
+] as const;
+
+export const petMembershipRoleLabels = {
+  OWNER: "Tutor principal",
+  CAREGIVER: "Co-tutor",
+} as const;

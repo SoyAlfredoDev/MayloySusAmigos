@@ -1,4 +1,4 @@
-export type AdminModuleId = "tienda" | "veterinaria" | "peluqueria";
+export type AdminModuleId = "tienda" | "veterinaria" | "peluqueria" | "mascotas";
 
 export type AdminModule = {
   id: AdminModuleId;
@@ -29,6 +29,13 @@ export const adminModules: AdminModule[] = [
     href: "/admin/peluqueria",
     description: "Citas, peluqueros, servicios y disponibilidad.",
     badge: "Grooming",
+  },
+  {
+    id: "mascotas",
+    label: "Mascotas",
+    href: "/admin/mascotas",
+    description: "Vincular tutores con mascotas y gestionar asociaciones.",
+    badge: "Clientes",
   },
 ] as const;
 

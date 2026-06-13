@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { addToCart } from "@/actions/shop/cart";
+import { dispatchCartCount } from "@/lib/cart/events";
 import type { ActionResult } from "@/actions/shop/types";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,12 @@ export function AddToCartButton({
   fullWidth = false,
 }: AddToCartButtonProps) {
   const [state, formAction, pending] = useActionState(addToCart, initial);
+
+  useEffect(() => {
+    if (state?.ok && typeof state.itemCount === "number") {
+      dispatchCartCount(state.itemCount);
+    }
+  }, [state]);
 
   return (
     <div className={cn(fullWidth && "w-full", className)}>

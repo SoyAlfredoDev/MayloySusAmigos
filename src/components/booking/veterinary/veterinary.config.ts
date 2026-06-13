@@ -2,11 +2,11 @@ export const veterinaryBookingConfig = {
   badge: "Módulo de agendamiento",
   title: "Cita Veterinaria",
   description:
-    "Selecciona profesional, especialidad, fecha y hora. Los horarios ocupados se bloquean automáticamente.",
+    "Elige especialidad, veterinario y horario según la disponibilidad real de la clínica.",
   steps: [
-    "Seleccionar mascota registrada",
-    "Elegir especialidad y profesional",
-    "Elegir fecha y horario disponible",
+    "Seleccionar mascota",
+    "Elegir especialidad y servicio",
+    "Elegir profesional y horario",
     "Confirmar cita",
   ],
   stepAccent: "milo" as const,

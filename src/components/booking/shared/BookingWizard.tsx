@@ -1,24 +1,24 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { PetSize, PetSpecies, ServiceModule } from "@prisma/client";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { BookingProgress } from "@/components/booking/shared/BookingProgress";
+import { SchedulePicker } from "@/components/booking/shared/SchedulePicker";
 import { SelectableCard } from "@/components/booking/shared/SelectableCard";
 import {
   createAppointment,
 } from "@/actions/booking/appointments";
-import { fetchAvailableSlots } from "@/actions/booking/availability";
 import {
   createBookingPet,
   fetchBookingPets,
-  resolveBookingOwner,
+  resolveBookingGuest,
   updatePetSize,
 } from "@/actions/booking/pets";
 import { petSizeLabels, petSpeciesLabels } from "@/lib/booking/labels";
-import { addDaysYmd, formatAppointmentDate, todayYmd } from "@/lib/booking/timezone";
+import { formatAppointmentDate, todayYmd } from "@/lib/booking/timezone";
 import { formatCLP } from "@/lib/utils";
 import type {
   BookingPet,
@@ -40,6 +40,11 @@ type BookingWizardProps = {
   services: BookingService[];
   professionals: BookingProfessional[];
   initialPets: BookingPet[];
+  initialUser?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
 };
 
 const speciesOptions: PetSpecies[] = ["DOG", "CAT", "BIRD", "RODENT", "OTHER"];
@@ -51,13 +56,16 @@ export function BookingWizard({
   services,
   professionals,
   initialPets,
+  initialUser = null,
 }: BookingWizardProps) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const [ownerReady, setOwnerReady] = useState(initialPets.length > 0);
+  const [ownerReady, setOwnerReady] = useState(
+    Boolean(initialUser) || initialPets.length > 0,
+  );
   const [pets, setPets] = useState<BookingPet[]>(initialPets);
   const [petId, setPetId] = useState<string | null>(initialPets[0]?.id ?? null);
   const [specialtyId, setSpecialtyId] = useState<string | null>(null);
@@ -65,7 +73,6 @@ export function BookingWizard({
   const [professionalId, setProfessionalId] = useState<string | null>(null);
   const [dateYmd, setDateYmd] = useState(todayYmd());
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
-  const [slots, setSlots] = useState<{ startAt: string; label: string }[]>([]);
   const [notes, setNotes] = useState("");
   const [showNewPet, setShowNewPet] = useState(initialPets.length === 0);
 
@@ -89,33 +96,6 @@ export function BookingWizard({
       ? professionals.filter((pro) => pro.specialtyIds.includes(specialtyId))
       : professionals;
 
-  useEffect(() => {
-    if (!professionalId || !serviceId || !dateYmd) {
-      setSlots([]);
-      return;
-    }
-
-    startTransition(async () => {
-      const result = await fetchAvailableSlots({
-        professionalId,
-        serviceId,
-        dateYmd,
-      });
-      if (result.ok && result.data) {
-        setSlots(result.data);
-        if (
-          scheduledAt &&
-          !result.data.some((slot) => slot.startAt === scheduledAt)
-        ) {
-          setScheduledAt(null);
-        }
-      } else {
-        setSlots([]);
-        setScheduledAt(null);
-      }
-    });
-  }, [professionalId, serviceId, dateYmd]);
-
   function goNext() {
     setError(null);
     setStep((current) => Math.min(current + 1, config.steps.length - 1));
@@ -126,9 +106,9 @@ export function BookingWizard({
     setStep((current) => Math.max(current - 1, 0));
   }
 
-  function handleOwnerSubmit(formData: FormData) {
+  function handleGuestSubmit(formData: FormData) {
     startTransition(async () => {
-      const result = await resolveBookingOwner(null, formData);
+      const result = await resolveBookingGuest(null, formData);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -249,43 +229,74 @@ export function BookingWizard({
       {step === 0 && (
         <section className="space-y-6">
           {!ownerReady && (
-            <form action={handleOwnerSubmit} className="card-milo space-y-4">
-              <h2 className="text-lg font-semibold text-ink">Tus datos</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm">
-                  <span className="font-medium">Nombre</span>
-                  <input
-                    name="name"
-                    required
-                    className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="font-medium">Teléfono</span>
-                  <input
-                    name="phone"
-                    required
-                    className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-                  />
-                </label>
+            <div className="space-y-4">
+              <div className="card-milo space-y-3">
+                <h2 className="text-lg font-semibold text-ink">
+                  ¿Tienes cuenta?
+                </h2>
+                <p className="text-sm text-ink-muted">
+                  Inicia sesión para ver tus mascotas o crea una cuenta segura.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Button href={`/cuenta/ingresar?callbackUrl=${encodeURIComponent(config.module === "VETERINARY" ? "/veterinaria" : "/peluqueria")}`}>
+                    Iniciar sesión
+                  </Button>
+                  <Button variant="ghost" href="/cuenta/registro">
+                    Crear cuenta
+                  </Button>
+                </div>
               </div>
-              <label className="block text-sm">
-                <span className="font-medium">Correo</span>
-                <input
-                  name="email"
-                  type="email"
-                  required
-                  className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-                />
-              </label>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Guardando..." : "Continuar"}
-              </Button>
-            </form>
+
+              <form action={handleGuestSubmit} className="card-milo space-y-4">
+                <h2 className="text-lg font-semibold text-ink">
+                  O continúa sin contraseña
+                </h2>
+                <p className="text-sm text-ink-muted">
+                  Solo para esta reserva. Te recomendamos registrarte para guardar
+                  mascotas y citas.
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm">
+                    <span className="font-medium">Nombre</span>
+                    <input
+                      name="name"
+                      required
+                      className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="font-medium">Teléfono</span>
+                    <input
+                      name="phone"
+                      required
+                      className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
+                    />
+                  </label>
+                </div>
+                <label className="block text-sm">
+                  <span className="font-medium">Correo</span>
+                  <input
+                    name="email"
+                    type="email"
+                    required
+                    className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
+                  />
+                </label>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Guardando..." : "Continuar"}
+                </Button>
+              </form>
+            </div>
           )}
 
           {ownerReady && (
             <div className="space-y-4">
+              {initialUser && (
+                <p className="text-sm text-ink-muted">
+                  Hola, <span className="font-semibold text-ink">{initialUser.name}</span>
+                  {initialUser.email ? ` (${initialUser.email})` : ""}
+                </p>
+              )}
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-ink">Tu mascota</h2>
                 <Button
@@ -458,52 +469,16 @@ export function BookingWizard({
 
           <div className="card-milo space-y-4">
             <h2 className="text-lg font-semibold text-ink">Fecha y horario</h2>
-            <label className="block text-sm">
-              <span className="font-medium">Fecha</span>
-              <input
-                type="date"
-                value={dateYmd}
-                min={todayYmd()}
-                max={addDaysYmd(todayYmd(), 60)}
-                onChange={(event) => {
-                  setDateYmd(event.target.value);
-                  setScheduledAt(null);
-                }}
-                className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-              />
-            </label>
-
-            {professionalId && serviceId && (
-              <div>
-                <p className="mb-2 text-sm font-medium text-ink">
-                  Horarios disponibles
-                </p>
-                {isPending && (
-                  <p className="text-sm text-ink-muted">Cargando horarios...</p>
-                )}
-                {!isPending && slots.length === 0 && (
-                  <p className="text-sm text-ink-muted">
-                    No hay horarios para esta fecha. Prueba otro día.
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  {slots.map((slot) => (
-                    <button
-                      key={slot.startAt}
-                      type="button"
-                      onClick={() => setScheduledAt(slot.startAt)}
-                      className={
-                        scheduledAt === slot.startAt
-                          ? "rounded-pill bg-milo-500 px-4 py-2 text-sm font-semibold text-white"
-                          : "rounded-pill border border-surface-border bg-white px-4 py-2 text-sm font-medium text-ink hover:border-milo-300"
-                      }
-                    >
-                      {slot.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <SchedulePicker
+              professionalId={professionalId}
+              serviceId={serviceId}
+              serviceDurationMinutes={selectedService?.durationMinutes}
+              dateYmd={dateYmd}
+              scheduledAt={scheduledAt}
+              onDateChange={setDateYmd}
+              onSlotChange={setScheduledAt}
+              accent={config.accent}
+            />
           </div>
         </section>
       )}

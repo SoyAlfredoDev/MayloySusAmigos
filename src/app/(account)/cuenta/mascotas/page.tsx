@@ -1,12 +1,19 @@
-import { AccountPageHeader } from "@/components/account";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { fetchUserPets } from "@/actions/account/pets";
+import { PetManager } from "@/components/account/PetManager";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Mis Mascotas" };
 
-export default function PetsPage() {
-  return (
-    <AccountPageHeader
-      title="Mis mascotas"
-      description="Registro de mascotas, raza, edad e historial clínico — Fase 1"
-    />
-  );
+export default async function PetsPage() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/cuenta/ingresar?callbackUrl=/cuenta/mascotas");
+  }
+
+  const pets = await fetchUserPets();
+
+  return <PetManager initialPets={pets} />;
 }

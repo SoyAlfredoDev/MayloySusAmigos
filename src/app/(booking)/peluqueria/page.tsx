@@ -4,7 +4,8 @@ import {
   groomingBookingConfig,
 } from "@/components/booking";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { getBookingUserId } from "@/lib/booking/session";
+import { auth } from "@/auth";
+import { getCurrentUserId } from "@/lib/auth/session";
 import {
   getProfessionals,
   getServices,
@@ -22,12 +23,21 @@ export default async function GroomingBookingPage() {
   const { badge, title, description, steps, stepAccent } =
     groomingBookingConfig;
 
-  const userId = await getBookingUserId();
+  const session = await auth();
+  const userId = await getCurrentUserId();
   const [services, professionals, initialPets] = await Promise.all([
     getServices("GROOMING"),
     getProfessionals("GROOMING"),
     userId ? getUserPets(userId) : Promise.resolve([]),
   ]);
+
+  const initialUser = session?.user?.id
+    ? {
+        id: session.user.id,
+        name: session.user.name ?? "Usuario",
+        email: session.user.email ?? "",
+      }
+    : null;
 
   return (
     <PageContainer size="narrow">
@@ -43,6 +53,7 @@ export default async function GroomingBookingPage() {
         services={services}
         professionals={professionals}
         initialPets={initialPets}
+        initialUser={initialUser}
       />
     </PageContainer>
   );
