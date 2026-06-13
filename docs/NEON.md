@@ -127,9 +127,30 @@ Deberías ver tablas como `users`, `pets`, `categories`, `products`, etc.
 En el proyecto de Vercel de **Mailo**, agrega las variables de la **base nueva**:
 
 - `DATABASE_URL` (pooled)
-- `DIRECT_URL` (direct, para migraciones en CI si aplica)
+- `DIRECT_URL` (direct, para migraciones)
 
 No reutilices las variables del otro proyecto en Vercel.
+
+### Crear tablas en producción (obligatorio una vez)
+
+Si `/api/health/db` responde `The table public.categories does not exist`, la base de Vercel **no tiene migraciones aplicadas**.
+
+**Opción A — misma base que local (recomendado):**  
+Copia en Vercel las mismas `DATABASE_URL` y `DIRECT_URL` de tu `.env` local (`ep-cool-haze-...`). Esa base ya tiene tablas y seed.
+
+**Opción B — base nueva de Vercel/Neon:**  
+Desde tu máquina, con las URLs que muestra Vercel → Storage → `.env.local`:
+
+```bash
+# Usa DIRECT_URL de Vercel (sin pooler) para migrar
+export DIRECT_URL="postgresql://...@ep-xxx...neon.tech/neondb?sslmode=require"
+export DATABASE_URL="postgresql://...@ep-xxx-pooler...neon.tech/neondb?sslmode=require"
+
+npm run db:migrate:deploy
+npm run db:seed
+```
+
+Luego verifica: `https://tu-dominio.vercel.app/api/health/db` → debe mostrar `"ok": true` y `"products": 9`.
 
 ---
 
