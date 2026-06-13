@@ -2,6 +2,10 @@ import { db } from "@/lib/db";
 import { toShopCategory, toShopProduct } from "@/lib/shop/mappers";
 import type { AdminCategoryRow, AdminProductRow } from "@/lib/shop/mappers";
 
+function logShopQueryError(scope: string, error: unknown) {
+  console.error(`[shop] ${scope} failed:`, error);
+}
+
 export async function getActiveCategories() {
   try {
     const categories = await db.category.findMany({
@@ -9,7 +13,8 @@ export async function getActiveCategories() {
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
     return categories.map(toShopCategory);
-  } catch {
+  } catch (error) {
+    logShopQueryError("getActiveCategories", error);
     return [];
   }
 }
@@ -27,7 +32,8 @@ export async function getActiveProducts(categorySlug?: string) {
       orderBy: [{ isFeatured: "desc" }, { name: "asc" }],
     });
     return products.map(toShopProduct);
-  } catch {
+  } catch (error) {
+    logShopQueryError("getActiveProducts", error);
     return [];
   }
 }
@@ -39,7 +45,8 @@ export async function getProductBySlug(slug: string) {
       include: { category: true },
     });
     return product ? toShopProduct(product) : null;
-  } catch {
+  } catch (error) {
+    logShopQueryError("getProductBySlug", error);
     return null;
   }
 }
@@ -53,7 +60,8 @@ export async function getFeaturedProducts(limit = 4) {
       take: limit,
     });
     return products.map(toShopProduct);
-  } catch {
+  } catch (error) {
+    logShopQueryError("getFeaturedProducts", error);
     return [];
   }
 }

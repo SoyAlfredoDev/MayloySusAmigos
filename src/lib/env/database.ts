@@ -21,6 +21,12 @@ export function getPooledDatabaseUrl(): string {
     );
   }
 
+  // Ayuda en cold starts de Neon en serverless (Vercel)
+  if (!url.includes("connect_timeout=")) {
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}connect_timeout=15`;
+  }
+
   return url;
 }
 
