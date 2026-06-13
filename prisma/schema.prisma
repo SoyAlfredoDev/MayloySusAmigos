@@ -166,7 +166,7 @@ model Pet {
   isNeutered  Boolean    @default(false)
   allergies   String?
   conditions  String?    // Condiciones médicas relevantes
-  photoUrl    String?
+  photoUrls   String[]
   notes       String?
   isActive    Boolean    @default(true)
   deceasedAt  DateTime?
@@ -314,6 +314,7 @@ model CartItem {
 
 model Order {
   id              String        @id @default(cuid())
+  orderNumber     String        @unique
   userId          String
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
@@ -324,7 +325,8 @@ model Order {
   paymentProvider   PaymentProvider?
   externalPaymentId String?       @unique // payment_intent (Stripe) o payment id (Mercado Pago)
   checkoutSessionId String?       // checkout session / preference id
-  notes           String?
+  customerNotes   String?         // Comentarios del cliente al comprar
+  adminNotes      String?         // Notas internas del staff (no visible al cliente)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

@@ -1,26 +1,15 @@
 "use client";
 
 import { useActionState } from "react";
-import type { PetSize, PetSpecies } from "@prisma/client";
-import {
-  addPetCoOwner,
-  createUserPet,
-  type PetRow,
-} from "@/actions/account/pets";
+import { addPetCoOwner, type PetRow } from "@/actions/account/pets";
 import { AccountPageHeader } from "@/components/account";
+import { ProductImage } from "@/components/shop/ProductImage";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { petSizeLabels, petSpeciesLabels } from "@/lib/booking/labels";
 
-const speciesOptions: PetSpecies[] = ["DOG", "CAT", "BIRD", "RODENT", "OTHER"];
-const sizeOptions: PetSize[] = ["TOY", "SMALL", "MEDIUM", "LARGE", "GIANT"];
-
 export function PetManager({ initialPets }: { initialPets: PetRow[] }) {
-  const [createState, createAction, createPending] = useActionState(
-    createUserPet,
-    null,
-  );
   const [inviteState, inviteAction, invitePending] = useActionState(
     addPetCoOwner,
     null,
@@ -30,28 +19,50 @@ export function PetManager({ initialPets }: { initialPets: PetRow[] }) {
     <div>
       <AccountPageHeader
         title="Mis mascotas"
-        description="Registra mascotas y comparte el cuidado con otros tutores."
+        description="Mascotas vinculadas a tu cuenta. El registro lo realiza el equipo Mailo."
       />
 
-      {createState && !createState.ok && (
-        <Alert variant="error" title="Error" className="mb-4 mt-0">
-          {createState.error}
-        </Alert>
-      )}
+      <Alert variant="info" title="Registro de mascotas" className="mt-6">
+        Solo los administradores pueden registrar mascotas nuevas. Si la tuya no
+        aparece, contacta a la clínica para que la agreguen y vinculen a tu
+        cuenta.
+      </Alert>
 
       <div className="mt-6 space-y-4">
         {initialPets.length === 0 && (
           <Card>
             <p className="text-sm text-ink-muted">
-              Aún no tienes mascotas registradas. Agrega la primera abajo.
+              Aún no tienes mascotas vinculadas. Cuando Mailo registre la tuya,
+              aparecerá aquí automáticamente.
             </p>
           </Card>
         )}
 
         {initialPets.map((pet) => (
           <Card key={pet.id}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
+            <div className="flex flex-wrap gap-4">
+              {pet.photoUrls.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {pet.photoUrls.map((url, index) => (
+                    <div
+                      key={url}
+                      className="h-20 w-20 overflow-hidden rounded-lg border border-ink/10"
+                    >
+                      <ProductImage
+                        src={url}
+                        alt={`${pet.name} ${index + 1}`}
+                        className="h-full w-full rounded-lg"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-surface-muted text-xs text-ink-muted">
+                  Sin foto
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1">
                 <h2 className="text-lg font-semibold text-ink">{pet.name}</h2>
                 <p className="text-sm text-ink-muted">
                   {petSpeciesLabels[pet.species]}
@@ -98,56 +109,6 @@ export function PetManager({ initialPets }: { initialPets: PetRow[] }) {
           </Card>
         ))}
       </div>
-
-      <form action={createAction} className="card-milo mt-8 space-y-4">
-        <h2 className="text-lg font-semibold text-ink">Nueva mascota</h2>
-        <label className="block text-sm">
-          <span className="font-medium">Nombre</span>
-          <input
-            name="name"
-            required
-            className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="font-medium">Especie</span>
-          <select
-            name="species"
-            defaultValue="DOG"
-            className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-          >
-            {speciesOptions.map((s) => (
-              <option key={s} value={s}>
-                {petSpeciesLabels[s]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block text-sm">
-          <span className="font-medium">Raza (opcional)</span>
-          <input
-            name="breed"
-            className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="font-medium">Tamaño (peluquería)</span>
-          <select
-            name="size"
-            className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-          >
-            <option value="">Sin definir</option>
-            {sizeOptions.map((s) => (
-              <option key={s} value={s}>
-                {petSizeLabels[s]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Button type="submit" disabled={createPending}>
-          {createPending ? "Guardando..." : "Agregar mascota"}
-        </Button>
-      </form>
     </div>
   );
 }

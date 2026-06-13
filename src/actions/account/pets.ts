@@ -3,25 +3,9 @@
 import { revalidatePath } from "next/cache";
 import type { PetSize, PetSpecies } from "@prisma/client";
 import { requireAuthenticatedUserId } from "@/lib/auth/session";
-import { createPetForUser, linkUserToPet } from "@/lib/auth/pets";
+import { linkUserToPet } from "@/lib/auth/pets";
 import { db } from "@/lib/db";
 import type { AuthActionResult } from "@/actions/auth/types";
-
-const speciesValues = new Set<PetSpecies>([
-  "DOG",
-  "CAT",
-  "BIRD",
-  "RODENT",
-  "OTHER",
-]);
-
-const sizeValues = new Set<PetSize>([
-  "TOY",
-  "SMALL",
-  "MEDIUM",
-  "LARGE",
-  "GIANT",
-]);
 
 export type PetRow = {
   id: string;
@@ -29,6 +13,7 @@ export type PetRow = {
   species: PetSpecies;
   breed: string | null;
   size: PetSize | null;
+  photoUrls: string[];
   role: string;
   isPrimary: boolean;
   coOwners: number;
@@ -56,6 +41,7 @@ export async function fetchUserPets(): Promise<PetRow[]> {
     species: row.pet.species,
     breed: row.pet.breed,
     size: row.pet.size,
+    photoUrls: row.pet.photoUrls,
     role: row.role,
     isPrimary: row.isPrimary,
     coOwners: row.pet._count.memberships,
@@ -64,40 +50,13 @@ export async function fetchUserPets(): Promise<PetRow[]> {
 
 export async function createUserPet(
   _prev: AuthActionResult<{ petId: string }> | null,
-  formData: FormData,
+  _formData: FormData,
 ): Promise<AuthActionResult<{ petId: string }>> {
-  const userId = await requireAuthenticatedUserId();
-  if (!userId) {
-    return { ok: false, error: "Inicia sesión para registrar mascotas." };
-  }
-
-  const name = String(formData.get("name") ?? "").trim();
-  const species = String(formData.get("species") ?? "") as PetSpecies;
-  const breed = String(formData.get("breed") ?? "").trim() || null;
-  const sizeRaw = String(formData.get("size") ?? "").trim();
-  const size =
-    sizeRaw && sizeValues.has(sizeRaw as PetSize)
-      ? (sizeRaw as PetSize)
-      : null;
-
-  if (!name) return { ok: false, error: "El nombre es obligatorio." };
-  if (!speciesValues.has(species)) {
-    return { ok: false, error: "Selecciona una especie válida." };
-  }
-
-  const pet = await createPetForUser({
-    userId,
-    name,
-    species,
-    breed,
-    size,
-  });
-
-  revalidatePath("/cuenta/mascotas");
-  revalidatePath("/veterinaria");
-  revalidatePath("/peluqueria");
-
-  return { ok: true, data: { petId: pet.id } };
+  return {
+    ok: false,
+    error:
+      "Solo el equipo Mailo puede registrar mascotas. Contacta a la clínica si necesitas agregar una.",
+  };
 }
 
 /** Vincula un usuario existente como co-tutor de una mascota (por email). */

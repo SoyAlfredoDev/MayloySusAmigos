@@ -23,12 +23,14 @@ export type OrderItemView = {
 
 export type OrderSummary = {
   id: string;
+  orderNumber: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   subtotal: number;
   shippingCost: number;
   total: number;
   shippingAddress: ShippingAddress;
+  customerNotes: string | null;
   createdAt: Date;
   items: OrderItemView[];
 };

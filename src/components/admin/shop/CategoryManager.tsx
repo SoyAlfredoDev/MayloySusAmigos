@@ -10,7 +10,6 @@ import type { ActionResult } from "@/actions/shop/types";
 import type { AdminCategoryRow } from "@/lib/shop/mappers";
 import { inputClass, petTypeOptions } from "@/lib/shop/form";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 
 const initial: ActionResult | null = null;
 
@@ -149,13 +148,8 @@ export function CategoryManager({ categories }: { categories: AdminCategoryRow[]
   const [state, formAction, pending] = useActionState(createCategory, initial);
 
   return (
-    <Card className="bg-surface">
-      <h2 className="text-lg font-bold text-ink">Categorías</h2>
-      <p className="mt-1 text-sm text-ink-muted">
-        Crear, editar y eliminar categorías del catálogo.
-      </p>
-
-      <form action={formAction} className="mt-6 grid gap-3 sm:grid-cols-2">
+    <div>
+      <form action={formAction} className="grid gap-3 sm:grid-cols-2">
         <label className="block sm:col-span-2">
           <span className="text-sm font-semibold text-ink">Nombre</span>
           <input
@@ -214,6 +208,6 @@ export function CategoryManager({ categories }: { categories: AdminCategoryRow[]
           <li className="py-4 text-sm text-ink-muted">Sin categorías aún.</li>
         )}
       </ul>
-    </Card>
+    </div>
   );
 }

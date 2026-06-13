@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { PetSize, PetSpecies, ServiceModule } from "@prisma/client";
+import type { PetSize, ServiceModule } from "@prisma/client";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { BookingProgress } from "@/components/booking/shared/BookingProgress";
@@ -12,7 +12,6 @@ import {
   createAppointment,
 } from "@/actions/booking/appointments";
 import {
-  createBookingPet,
   fetchBookingPets,
   resolveBookingGuest,
   updatePetSize,
@@ -47,7 +46,6 @@ type BookingWizardProps = {
   } | null;
 };
 
-const speciesOptions: PetSpecies[] = ["DOG", "CAT", "BIRD", "RODENT", "OTHER"];
 const sizeOptions: PetSize[] = ["TOY", "SMALL", "MEDIUM", "LARGE", "GIANT"];
 
 export function BookingWizard({
@@ -74,7 +72,6 @@ export function BookingWizard({
   const [dateYmd, setDateYmd] = useState(todayYmd());
   const [scheduledAt, setScheduledAt] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
-  const [showNewPet, setShowNewPet] = useState(initialPets.length === 0);
 
   const selectedPet = pets.find((pet) => pet.id === petId) ?? null;
   const selectedService = services.find((svc) => svc.id === serviceId) ?? null;
@@ -118,25 +115,7 @@ export function BookingWizard({
       setPets(nextPets);
       if (nextPets.length > 0) {
         setPetId(nextPets[0].id);
-        setShowNewPet(false);
-      } else {
-        setShowNewPet(true);
       }
-    });
-  }
-
-  function handlePetSubmit(formData: FormData) {
-    startTransition(async () => {
-      const result = await createBookingPet(null, formData);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      const nextPets = await fetchBookingPets();
-      setPets(nextPets);
-      const newPetId = result.data?.petId ?? null;
-      setPetId(newPetId);
-      setShowNewPet(false);
     });
   }
 
@@ -158,7 +137,9 @@ export function BookingWizard({
   function validateStep(): string | null {
     if (step === 0) {
       if (!ownerReady) return "Ingresa tus datos de contacto.";
-      if (!petId) return "Selecciona o registra una mascota.";
+      if (!petId) {
+        return "Selecciona una mascota vinculada a tu cuenta. Si no aparece, contacta a Mailo.";
+      }
       if (config.module === "GROOMING" && !selectedPet?.size) {
         return "Indica el tamaño de tu mascota.";
       }
@@ -297,19 +278,15 @@ export function BookingWizard({
                   {initialUser.email ? ` (${initialUser.email})` : ""}
                 </p>
               )}
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-ink">Tu mascota</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowNewPet((value) => !value)}
-                >
-                  {showNewPet ? "Elegir existente" : "Agregar mascota"}
-                </Button>
-              </div>
+              <h2 className="text-lg font-semibold text-ink">Tu mascota</h2>
 
-              {!showNewPet && pets.length > 0 && (
-                <div className="grid gap-3">
+              {pets.length === 0 ? (
+                <Alert variant="info" title="Sin mascotas" className="mt-0">
+                  No tienes mascotas vinculadas. El equipo Mailo debe registrar
+                  la tuya antes de agendar. Contacta a la clínica.
+                </Alert>
+              ) : (
+                <div className="mt-3 grid gap-3">
                   {pets.map((pet) => (
                     <SelectableCard
                       key={pet.id}
@@ -325,62 +302,7 @@ export function BookingWizard({
                 </div>
               )}
 
-              {showNewPet && (
-                <form action={handlePetSubmit} className="card-milo space-y-4">
-                  <label className="block text-sm">
-                    <span className="font-medium">Nombre</span>
-                    <input
-                      name="name"
-                      required
-                      className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-                    />
-                  </label>
-                  <label className="block text-sm">
-                    <span className="font-medium">Especie</span>
-                    <select
-                      name="species"
-                      required
-                      defaultValue="DOG"
-                      className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-                    >
-                      {speciesOptions.map((species) => (
-                        <option key={species} value={species}>
-                          {petSpeciesLabels[species]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block text-sm">
-                    <span className="font-medium">Raza (opcional)</span>
-                    <input
-                      name="breed"
-                      className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-                    />
-                  </label>
-                  {config.module === "GROOMING" && (
-                    <label className="block text-sm">
-                      <span className="font-medium">Tamaño</span>
-                      <select
-                        name="size"
-                        required
-                        className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
-                      >
-                        <option value="">Seleccionar...</option>
-                        {sizeOptions.map((size) => (
-                          <option key={size} value={size}>
-                            {petSizeLabels[size]}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
-                  <Button type="submit" disabled={isPending}>
-                    {isPending ? "Guardando..." : "Guardar mascota"}
-                  </Button>
-                </form>
-              )}
-
-              {config.module === "GROOMING" && selectedPet && !showNewPet && (
+              {config.module === "GROOMING" && selectedPet && pets.length > 0 && (
                 <div className="card-milo space-y-3">
                   <p className="text-sm font-medium text-ink">
                     Tamaño de {selectedPet.name}

@@ -43,12 +43,20 @@ export function OrdersList({
     );
   }
 
+  const newOrder = newOrderId
+    ? orders.find((order) => order.id === newOrderId)
+    : undefined;
+
   return (
     <div className="mt-6 space-y-4">
-      {newOrderId && (
-        <Alert variant="info" title="Pedido registrado" className="mt-0">
-          Tu compra quedó guardada en tu cuenta. Te contactaremos para coordinar
-          el pago.
+      {newOrder && (
+        <Alert variant="info" title="Compra confirmada" className="mt-0">
+          Tu pedido{" "}
+          <span className="text-lg font-bold tracking-wide text-milo-800">
+            {newOrder.orderNumber}
+          </span>{" "}
+          quedó registrado y pagado. Lo verás en preparación para envío a la
+          dirección indicada.
         </Alert>
       )}
 
@@ -62,16 +70,24 @@ export function OrdersList({
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-milo-700">
-                  Pedido · {formatOrderDate(order.createdAt)}
+                <p className="text-xl font-bold tracking-wide text-milo-800">
+                  {order.orderNumber}
+                </p>
+                <p className="mt-1 text-sm font-medium text-milo-700">
+                  {formatOrderDate(order.createdAt)}
                 </p>
                 <p className="mt-1 text-lg font-bold text-ink">
                   {formatCLP(order.total)}
                 </p>
                 <p className="mt-1 text-xs text-ink-muted">
-                  {order.shippingAddress.commune},{" "}
-                  {order.shippingAddress.region}
+                  {order.shippingAddress.street}, {order.shippingAddress.commune}
                 </p>
+                {order.customerNotes && (
+                  <p className="mt-2 text-xs text-ink-muted">
+                    <span className="font-medium text-ink">Tu comentario:</span>{" "}
+                    {order.customerNotes}
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-pill bg-surface-muted px-3 py-1 text-sm font-medium">

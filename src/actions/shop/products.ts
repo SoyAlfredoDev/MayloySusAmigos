@@ -20,6 +20,7 @@ async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
 
 function revalidateShop() {
   revalidatePath("/admin/tienda");
+  revalidatePath("/admin/tienda/productos");
   revalidatePath("/tienda");
   revalidatePath("/");
 }
@@ -140,4 +141,21 @@ export async function deleteProduct(id: string): Promise<ActionResult> {
 export async function deleteProductAction(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   await deleteProduct(id);
+}
+
+export async function toggleProductActiveAction(
+  formData: FormData,
+): Promise<void> {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+
+  const product = await db.product.findUnique({ where: { id } });
+  if (!product) return;
+
+  await db.product.update({
+    where: { id },
+    data: { isActive: !product.isActive },
+  });
+
+  revalidateShop();
 }

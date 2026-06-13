@@ -31,7 +31,7 @@ export default function AdminPeluqueriaPage() {
   return (
     <>
       <AdminPageHeader module={module} />
-      <AdminSectionGrid sections={sections} />
+      <AdminSectionGrid sections={sections} className="mt-6" />
     </>
   );
 }

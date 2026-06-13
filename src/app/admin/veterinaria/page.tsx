@@ -39,7 +39,7 @@ export default async function AdminVeterinariaPage() {
   return (
     <>
       <AdminPageHeader module={module} />
-      <div className="mt-10 grid gap-8 xl:grid-cols-2">
+      <div className="mt-6 grid gap-8 xl:grid-cols-2">
         <VeterinaryServiceManager services={services} />
         <VeterinaryScheduleManager
           professionals={professionals}

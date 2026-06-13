@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { PageContainer } from "@/components/shared/PageContainer";
-import { ProductImage } from "@/components/shop/ProductImage";
+import { CartItemRow } from "@/components/shop/CartItemRow";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -40,35 +39,7 @@ export default async function CartPage() {
         <div className="mt-10 grid gap-8 lg:grid-cols-3">
           <ul className="space-y-4 lg:col-span-2">
             {cart.items.map((item) => (
-              <li
-                key={item.productId}
-                className="card-milo flex gap-4 bg-surface p-4"
-              >
-                <Link
-                  href={`/tienda/${item.slug}`}
-                  className="h-24 w-24 shrink-0 overflow-hidden rounded-lg"
-                >
-                  <ProductImage
-                    src={item.thumbnail}
-                    alt={item.title}
-                    className="h-full w-full rounded-lg"
-                  />
-                </Link>
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/tienda/${item.slug}`}
-                    className="font-semibold text-ink hover:text-milo-600"
-                  >
-                    {item.title}
-                  </Link>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {formatCLP(item.price)} × {item.quantity}
-                  </p>
-                  <p className="mt-2 font-bold text-milo-700">
-                    {formatCLP(item.lineTotal)}
-                  </p>
-                </div>
-              </li>
+              <CartItemRow key={item.productId} item={item} />
             ))}
           </ul>
 

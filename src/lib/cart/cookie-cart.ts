@@ -52,6 +52,13 @@ export async function addProductToCart(
   return next;
 }
 
+export async function removeProductFromCart(productId: string): Promise<CartLine[]> {
+  const cart = await readCart();
+  const next = cart.filter((line) => line.productId !== productId);
+  await writeCart(next);
+  return next;
+}
+
 export async function getCartItemCount(): Promise<number> {
   const cart = await readCart();
   return cart.reduce((sum, line) => sum + line.quantity, 0);

@@ -2,8 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { addProductToCart } from "@/lib/cart/cookie-cart";
+import { addProductToCart, removeProductFromCart } from "@/lib/cart/cookie-cart";
 import type { ActionResult } from "@/actions/shop/types";
+
+function revalidateCartPaths() {
+  revalidatePath("/tienda/carrito");
+  revalidatePath("/tienda");
+  revalidatePath("/tienda/checkout");
+}
 
 export async function addToCart(
   _prev: ActionResult | null,
@@ -24,8 +30,21 @@ export async function addToCart(
   const lines = await addProductToCart(productId, quantity);
   const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
 
-  revalidatePath("/tienda/carrito");
-  revalidatePath("/tienda");
+  revalidateCartPaths();
+  return { ok: true, itemCount };
+}
+
+export async function removeFromCart(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const productId = String(formData.get("productId") ?? "").trim();
+  if (!productId) return { ok: false, error: "Producto no válido." };
+
+  const lines = await removeProductFromCart(productId);
+  const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
+
+  revalidateCartPaths();
   return { ok: true, itemCount };
 }
 

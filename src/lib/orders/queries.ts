@@ -34,12 +34,14 @@ export async function getUserOrders(userId: string): Promise<OrderSummary[]> {
 
   return orders.map((order) => ({
     id: order.id,
+    orderNumber: order.orderNumber,
     status: order.status,
     paymentStatus: order.paymentStatus,
     subtotal: order.subtotal,
     shippingCost: order.shippingCost,
     total: order.total,
     shippingAddress: parseShippingAddress(order.shippingAddress),
+    customerNotes: order.customerNotes,
     createdAt: order.createdAt,
     items: order.items.map((item) => ({
       id: item.id,

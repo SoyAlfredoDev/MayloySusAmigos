@@ -1,4 +1,5 @@
 export { AddToCartButton, type AddToCartButtonProps } from "./AddToCartButton";
+export { CartItemRow } from "./CartItemRow";
 export { CartNavLink, type CartNavLinkProps } from "./CartNavLink";
 export { CheckoutView, type CheckoutViewProps, type CheckoutUser } from "./CheckoutView";
 export { CategoryNav, type CategoryNavProps } from "./CategoryNav";

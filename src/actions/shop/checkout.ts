@@ -8,6 +8,7 @@ import { clearCart } from "@/lib/cart/cookie-cart";
 import { getCartSummary } from "@/lib/cart/queries";
 import { setBookingUserId } from "@/lib/booking/session";
 import { db } from "@/lib/db";
+import { generateOrderNumber } from "@/lib/orders/generate-order-number";
 import type { ShippingAddress } from "@/lib/orders/types";
 
 const CHILE_REGIONS = new Set([
@@ -49,17 +50,31 @@ function parseShippingAddress(formData: FormData): ShippingAddress | null {
   };
 }
 
-async function resolveCheckoutUserId(formData: FormData): Promise<string | null> {
+function parseCustomerNotes(formData: FormData): string | null {
+  const value = String(formData.get("customerNotes") ?? "").trim();
+  return value || null;
+}
+
+async function resolveCheckoutUserId(
+  formData: FormData,
+): Promise<string | null> {
+  const phone = String(formData.get("phone") ?? "").trim();
+  if (!phone) return null;
+
   const session = await auth();
-  if (session?.user?.id) return session.user.id;
+  if (session?.user?.id) {
+    await db.user.update({
+      where: { id: session.user.id },
+      data: { phone },
+    });
+    return session.user.id;
+  }
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const name = String(formData.get("name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
   if (!name) return null;
-  if (!phone) return null;
 
   const user = await db.user.upsert({
     where: { email },
@@ -72,6 +87,16 @@ async function resolveCheckoutUserId(formData: FormData): Promise<string | null>
   return user.id;
 }
 
+function revalidateOrderPaths() {
+  revalidatePath("/tienda/carrito");
+  revalidatePath("/tienda/checkout");
+  revalidatePath("/cuenta/pedidos");
+  revalidatePath("/cuenta/perfil");
+  revalidatePath("/admin/tienda");
+  revalidatePath("/admin/tienda/productos");
+  revalidatePath("/tienda");
+}
+
 export async function placeOrder(
   _prev: ActionResult | null,
   formData: FormData,
@@ -81,7 +106,7 @@ export async function placeOrder(
     return {
       ok: false,
       error:
-        "Inicia sesión o completa tus datos de contacto (nombre, correo y teléfono).",
+        "Completa tus datos de contacto: nombre, correo y teléfono son obligatorios.",
     };
   }
 
@@ -89,7 +114,8 @@ export async function placeOrder(
   if (!shippingAddress) {
     return {
       ok: false,
-      error: "Completa la dirección de envío (calle, comuna y región).",
+      error:
+        "La dirección de envío es obligatoria: calle, comuna y región.",
     };
   }
 
@@ -99,7 +125,10 @@ export async function placeOrder(
   }
 
   const products = await db.product.findMany({
-    where: { id: { in: cart.items.map((item) => item.productId) }, isActive: true },
+    where: {
+      id: { in: cart.items.map((item) => item.productId) },
+      isActive: true,
+    },
     select: { id: true, stock: true, name: true },
   });
   const stockMap = new Map(products.map((p) => [p.id, p]));
@@ -120,17 +149,35 @@ export async function placeOrder(
     }
   }
 
+  const customerNotes = parseCustomerNotes(formData);
+
   const order = await db.$transaction(async (tx) => {
-    const created = await tx.order.create({
+    for (const item of cart.items) {
+      const updated = await tx.product.updateMany({
+        where: {
+          id: item.productId,
+          stock: { gte: item.quantity },
+        },
+        data: { stock: { decrement: item.quantity } },
+      });
+      if (updated.count !== 1) {
+        throw new Error("STOCK_CONFLICT");
+      }
+    }
+
+    const orderNumber = await generateOrderNumber(tx);
+
+    return tx.order.create({
       data: {
+        orderNumber,
         userId,
         subtotal: cart.subtotal,
         shippingCost: 0,
         total: cart.subtotal,
         shippingAddress,
-        status: "PENDING",
-        paymentStatus: "PENDING",
-        notes: "Pedido registrado — pago en línea disponible próximamente.",
+        status: "PROCESSING",
+        paymentStatus: "AUTHORIZED",
+        customerNotes,
         items: {
           create: cart.items.map((item) => ({
             productId: item.productId,
@@ -142,16 +189,22 @@ export async function placeOrder(
       },
       select: { id: true },
     });
-
-    return created;
+  }).catch((error: unknown) => {
+    if (error instanceof Error && error.message === "STOCK_CONFLICT") {
+      return null;
+    }
+    throw error;
   });
 
-  await clearCart();
+  if (!order) {
+    return {
+      ok: false,
+      error: "No hay stock suficiente para completar el pedido.",
+    };
+  }
 
-  revalidatePath("/tienda/carrito");
-  revalidatePath("/tienda/checkout");
-  revalidatePath("/cuenta/pedidos");
-  revalidatePath("/cuenta/perfil");
+  await clearCart();
+  revalidateOrderPaths();
 
   redirect(`/cuenta/pedidos?nuevo=${order.id}`);
 }

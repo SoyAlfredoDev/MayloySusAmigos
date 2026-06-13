@@ -64,7 +64,7 @@ export function CheckoutView({ cart, user, isLoggedIn }: CheckoutViewProps) {
             <h2 className="text-lg font-semibold text-ink">¿Ya tienes cuenta?</h2>
             <p className="mt-1 text-sm text-ink-muted">
               Inicia sesión para que tus compras queden guardadas en{" "}
-              <strong>Mis pedidos</strong>, junto con tus citas y mascotas.
+              <strong>Mis pedidos</strong>.
             </p>
             <div className="mt-4">
               <LoginForm callbackUrl="/tienda/checkout" />
@@ -83,58 +83,62 @@ export function CheckoutView({ cart, user, isLoggedIn }: CheckoutViewProps) {
 
         {isLoggedIn && user && (
           <Alert variant="info" title="Sesión iniciada" className="mt-0">
-            Comprando como <strong>{fullName}</strong> ({user.email}). Este pedido
-            quedará en tu historial de compras.
+            Comprando como <strong>{fullName}</strong> ({user.email}).
           </Alert>
         )}
 
         <form action={formAction} className="space-y-6">
-          {!isLoggedIn && (
-            <Card>
-              <h2 className="text-lg font-semibold text-ink">
-                Datos de contacto
-              </h2>
-              <p className="mt-1 text-sm text-ink-muted">
-                O continúa como invitado. Usaremos estos datos para asociar tu
-                pedido.
-              </p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm sm:col-span-2">
-                  <span className="font-medium">Nombre</span>
-                  <input
-                    name="name"
-                    type="text"
-                    required
-                    autoComplete="name"
-                    className={inputClass}
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="font-medium">Correo</span>
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    className={inputClass}
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="font-medium">Teléfono</span>
-                  <input
-                    name="phone"
-                    type="tel"
-                    required
-                    autoComplete="tel"
-                    className={inputClass}
-                  />
-                </label>
-              </div>
-            </Card>
-          )}
+          <Card>
+            <h2 className="text-lg font-semibold text-ink">Datos de contacto</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Obligatorios para coordinar el envío de tu pedido.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {!isLoggedIn ? (
+                <>
+                  <label className="block text-sm sm:col-span-2">
+                    <span className="font-medium">Nombre</span>
+                    <input
+                      name="name"
+                      type="text"
+                      required
+                      autoComplete="name"
+                      className={inputClass}
+                    />
+                  </label>
+                  <label className="block text-sm">
+                    <span className="font-medium">Correo</span>
+                    <input
+                      name="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      className={inputClass}
+                    />
+                  </label>
+                </>
+              ) : (
+                <input type="hidden" name="name" value={user?.name ?? ""} />
+              )}
+              <label className="block text-sm">
+                <span className="font-medium">Teléfono</span>
+                <input
+                  name="phone"
+                  type="tel"
+                  required
+                  autoComplete="tel"
+                  defaultValue={user?.phone ?? ""}
+                  className={inputClass}
+                />
+              </label>
+            </div>
+          </Card>
 
           <Card>
             <h2 className="text-lg font-semibold text-ink">Dirección de envío</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Todos los productos se despachan a domicilio.
+            </p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="block text-sm sm:col-span-2">
                 <span className="font-medium">Calle y número</span>
@@ -160,6 +164,7 @@ export function CheckoutView({ cart, user, isLoggedIn }: CheckoutViewProps) {
                 <input
                   name="city"
                   type="text"
+                  required
                   defaultValue="Santiago"
                   className={inputClass}
                 />
@@ -184,12 +189,31 @@ export function CheckoutView({ cart, user, isLoggedIn }: CheckoutViewProps) {
             </div>
           </Card>
 
+          <Card>
+            <h2 className="text-lg font-semibold text-ink">
+              Comentarios del pedido
+            </h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Indicaciones para la entrega, horarios preferidos u otras notas.
+            </p>
+            <label className="mt-4 block text-sm">
+              <span className="sr-only">Comentarios</span>
+              <textarea
+                name="customerNotes"
+                rows={3}
+                maxLength={500}
+                placeholder="Ej. dejar en conserjería, entregar después de las 18:00…"
+                className={inputClass}
+              />
+            </label>
+          </Card>
+
           <Card className="bg-milo-50">
-            <h2 className="text-lg font-semibold text-ink">Pago</h2>
+            <h2 className="text-lg font-semibold text-ink">Confirmación</h2>
             <p className="mt-2 text-sm text-ink-muted">
-              Al confirmar, registramos tu pedido en tu cuenta. El pago en línea
-              (Mercado Pago / Stripe) se activará pronto; por ahora coordinaremos
-              el pago contigo.
+              Al confirmar, tu pedido queda registrado y pagado. Prepararemos el
+              envío a la dirección indicada. El pago en línea se activará más
+              adelante; por ahora el cobro queda confirmado automáticamente.
             </p>
           </Card>
 
@@ -201,7 +225,7 @@ export function CheckoutView({ cart, user, isLoggedIn }: CheckoutViewProps) {
 
           <div className="flex flex-wrap gap-3">
             <Button type="submit" variant="cta" disabled={pending}>
-              {pending ? "Registrando pedido..." : "Confirmar pedido"}
+              {pending ? "Procesando compra..." : "Confirmar compra"}
             </Button>
             <Button href="/tienda/carrito" variant="ghost">
               Volver al carrito

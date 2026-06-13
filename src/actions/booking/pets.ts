@@ -1,21 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { PetSize, PetSpecies } from "@prisma/client";
-import { createPetForUser, userHasPetAccess } from "@/lib/auth/pets";
+import type { PetSize } from "@prisma/client";
+import { userHasPetAccess } from "@/lib/auth/pets";
 import { getCurrentUserId } from "@/lib/auth/session";
 import { getUserPets } from "@/lib/booking/queries";
 import { setBookingUserId } from "@/lib/booking/session";
 import type { BookingActionResult } from "@/actions/booking/types";
 import type { BookingPet } from "@/types/booking";
-
-const speciesValues = new Set<PetSpecies>([
-  "DOG",
-  "CAT",
-  "BIRD",
-  "RODENT",
-  "OTHER",
-]);
 
 const sizeValues = new Set<PetSize>([
   "TOY",
@@ -60,43 +52,13 @@ export async function fetchBookingPets(): Promise<BookingPet[]> {
 
 export async function createBookingPet(
   _prev: BookingActionResult<{ petId: string }> | null,
-  formData: FormData,
+  _formData: FormData,
 ): Promise<BookingActionResult<{ petId: string }>> {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    return {
-      ok: false,
-      error: "Inicia sesión o ingresa tus datos de contacto.",
-    };
-  }
-
-  const name = String(formData.get("name") ?? "").trim();
-  const species = String(formData.get("species") ?? "") as PetSpecies;
-  const breed = String(formData.get("breed") ?? "").trim() || null;
-  const sizeRaw = String(formData.get("size") ?? "").trim();
-  const size =
-    sizeRaw && sizeValues.has(sizeRaw as PetSize)
-      ? (sizeRaw as PetSize)
-      : null;
-
-  if (!name) return { ok: false, error: "El nombre de la mascota es obligatorio." };
-  if (!speciesValues.has(species)) {
-    return { ok: false, error: "Selecciona una especie válida." };
-  }
-
-  const pet = await createPetForUser({
-    userId,
-    name,
-    species,
-    breed,
-    size,
-  });
-
-  revalidatePath("/cuenta/mascotas");
-  revalidatePath("/veterinaria");
-  revalidatePath("/peluqueria");
-
-  return { ok: true, data: { petId: pet.id } };
+  return {
+    ok: false,
+    error:
+      "Solo Mailo puede registrar mascotas. Si la tuya no aparece, contacta a la clínica.",
+  };
 }
 
 export async function updatePetSize(

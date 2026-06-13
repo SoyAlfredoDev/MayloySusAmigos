@@ -1,0 +1,1 @@
+export { AdminClientsTable } from "./AdminClientsTable";

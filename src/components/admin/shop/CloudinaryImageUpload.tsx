@@ -9,6 +9,9 @@ export interface CloudinaryImageUploadProps {
   name?: string;
   defaultUrls?: string[];
   label?: string;
+  folder?: string;
+  maxFiles?: number;
+  helperText?: string;
 }
 
 function extractUrl(info: CloudinaryUploadWidgetInfo | string): string | null {
@@ -20,6 +23,9 @@ export function CloudinaryImageUpload({
   name = "imageUrls",
   defaultUrls = [],
   label = "Imágenes del producto",
+  folder = "mailo/productos",
+  maxFiles = 5,
+  helperText,
 }: CloudinaryImageUploadProps) {
   const [urls, setUrls] = useState<string[]>(defaultUrls);
   const uploadPreset =
@@ -83,8 +89,8 @@ export function CloudinaryImageUpload({
           uploadPreset={uploadPreset}
           options={{
             multiple: true,
-            maxFiles: 5,
-            folder: "mailo/productos",
+            maxFiles,
+            folder,
             sources: ["local", "url", "camera"],
           }}
           onSuccess={(result) => {
@@ -102,7 +108,8 @@ export function CloudinaryImageUpload({
       </div>
 
       <p className="mt-2 text-xs text-ink-muted">
-        Sube hasta 5 imágenes. Se guardan en tu cuenta Cloudinary.
+        {helperText ??
+          `Sube hasta ${maxFiles} imágenes. Se guardan en tu cuenta Cloudinary.`}
       </p>
     </div>
   );

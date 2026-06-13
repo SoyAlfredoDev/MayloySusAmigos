@@ -12,6 +12,17 @@ export type AdminPetOption = {
   name: string;
   species: import("@prisma/client").PetSpecies;
   breed: string | null;
+  photoUrls: string[];
+};
+
+export type AdminPetRow = {
+  id: string;
+  name: string;
+  species: import("@prisma/client").PetSpecies;
+  breed: string | null;
+  photoUrls: string[];
+  createdAt: Date;
+  tutorCount: number;
 };
 
 export type AdminPetMembershipRow = {
@@ -57,10 +68,37 @@ export async function getAdminPetOptions(): Promise<AdminPetOption[]> {
       name: true,
       species: true,
       breed: true,
+      photoUrls: true,
     },
   });
 
   return rows;
+}
+
+export async function getAdminPets(): Promise<AdminPetRow[]> {
+  const rows = await db.pet.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      species: true,
+      breed: true,
+      photoUrls: true,
+      createdAt: true,
+      _count: { select: { memberships: true } },
+    },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    species: row.species,
+    breed: row.breed,
+    photoUrls: row.photoUrls,
+    createdAt: row.createdAt,
+    tutorCount: row._count.memberships,
+  }));
 }
 
 export async function getAdminPetMemberships(): Promise<AdminPetMembershipRow[]> {

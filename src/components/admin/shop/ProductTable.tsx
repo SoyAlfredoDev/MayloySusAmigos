@@ -1,250 +1,175 @@
 "use client";
 
-import { useActionState, useState } from "react";
 import {
   deleteProductAction,
-  updateProduct,
+  toggleProductActiveAction,
 } from "@/actions/shop/products";
-import type { ActionResult } from "@/actions/shop/types";
-import type { AdminCategoryRow, AdminProductRow } from "@/lib/shop/mappers";
-import { inputClass, petTypeOptions } from "@/lib/shop/form";
-import { formatCLP } from "@/lib/utils";
+import type { AdminProductRow } from "@/lib/shop/mappers";
+import { petTypeOptions } from "@/lib/shop/form";
+import { cn, formatCLP } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { CloudinaryImageUpload } from "@/components/admin/shop/CloudinaryImageUpload";
 import { ProductImage } from "@/components/shop/ProductImage";
 
-const initial: ActionResult | null = null;
+const petTypeLabel = Object.fromEntries(
+  petTypeOptions.map((o) => [o.value, o.label]),
+) as Record<string, string>;
 
-function ProductEditPanel({
+function ProductActions({
   product,
-  categories,
-  onCancel,
+  onEdit,
 }: {
   product: AdminProductRow;
-  categories: AdminCategoryRow[];
-  onCancel: () => void;
+  onEdit: (product: AdminProductRow) => void;
 }) {
-  const [state, formAction, pending] = useActionState(updateProduct, initial);
+  const handleDelete = () => {
+    if (
+      !window.confirm(
+        `¿Eliminar "${product.name}"? Esta acción no se puede deshacer.`,
+      )
+    ) {
+      return;
+    }
+    const form = document.getElementById(
+      `delete-product-${product.id}`,
+    ) as HTMLFormElement | null;
+    form?.requestSubmit();
+  };
 
   return (
-    <form
-      action={formAction}
-      className="mt-4 grid gap-3 rounded-lg border-2 border-milo-200 bg-milo-50 p-4 sm:grid-cols-2"
-    >
-      <input type="hidden" name="id" value={product.id} />
-      <label className="block sm:col-span-2">
-        <span className="text-sm font-semibold text-ink">Nombre</span>
-        <input name="name" required defaultValue={product.name} className={inputClass} />
-      </label>
-      <label className="block">
-        <span className="text-sm font-semibold text-ink">Categoría</span>
-        <select
-          name="categoryId"
-          defaultValue={product.categoryId ?? ""}
-          className={inputClass}
-        >
-          <option value="">Sin categoría</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="block">
-        <span className="text-sm font-semibold text-ink">Tipo mascota</span>
-        <select name="petType" defaultValue={product.petType} className={inputClass}>
-          {petTypeOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="block">
-        <span className="text-sm font-semibold text-ink">Precio (CLP)</span>
-        <input
-          name="price"
-          type="number"
-          min={1}
-          required
-          defaultValue={product.price}
-          className={inputClass}
-        />
-      </label>
-      <label className="block">
-        <span className="text-sm font-semibold text-ink">Stock</span>
-        <input
-          name="stock"
-          type="number"
-          min={0}
-          defaultValue={product.stock}
-          className={inputClass}
-        />
-      </label>
-      <label className="block sm:col-span-2">
-        <span className="text-sm font-semibold text-ink">Descripción corta</span>
-        <input
-          name="shortDescription"
-          defaultValue={product.shortDescription ?? ""}
-          className={inputClass}
-        />
-      </label>
-      <label className="block sm:col-span-2">
-        <span className="text-sm font-semibold text-ink">Descripción</span>
-        <textarea
-          name="description"
-          rows={3}
-          defaultValue={product.description ?? ""}
-          className={inputClass}
-        />
-      </label>
-      <div className="sm:col-span-2">
-        <CloudinaryImageUpload defaultUrls={product.imageUrls} />
-      </div>
-      <label className="flex items-center gap-2">
-        <input
-          name="isFeatured"
-          type="checkbox"
-          defaultChecked={product.isFeatured}
-          className="h-4 w-4"
-        />
-        <span className="text-sm font-semibold text-ink">Destacado</span>
-      </label>
-      <label className="flex items-center gap-2">
-        <input
-          name="isActive"
-          type="checkbox"
-          defaultChecked={product.isActive}
-          className="h-4 w-4"
-        />
-        <span className="text-sm font-semibold text-ink">Publicado en tienda</span>
-      </label>
-      <div className="flex flex-wrap gap-2 sm:col-span-2">
-        <Button type="submit" variant="primary" size="sm" disabled={pending}>
-          {pending ? "Guardando..." : "Guardar cambios"}
+    <div className="flex flex-col items-end gap-1">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => onEdit(product)}
+      >
+        Editar
+      </Button>
+      <form action={toggleProductActiveAction}>
+        <input type="hidden" name="id" value={product.id} />
+        <Button type="submit" variant="ghost" size="sm">
+          {product.isActive ? "Deshabilitar" : "Habilitar"}
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          Cancelar
-        </Button>
-      </div>
-      {state && !state.ok && (
-        <p className="text-sm text-clinical-600 sm:col-span-2">{state.error}</p>
-      )}
-      {state?.ok && (
-        <p className="text-sm text-milo-700 sm:col-span-2">{state.message}</p>
-      )}
-    </form>
-  );
-}
-
-function ProductRow({
-  product,
-  categories,
-}: {
-  product: AdminProductRow;
-  categories: AdminCategoryRow[];
-}) {
-  const [editing, setEditing] = useState(false);
-
-  return (
-    <div className="border-b border-ink/5 py-4 last:border-0">
-      <div className="flex gap-4">
-        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg">
-          <ProductImage
-            src={product.imageUrls[0] ?? null}
-            alt={product.name}
-            className="h-full w-full rounded-lg"
-          />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <p className="font-semibold text-ink">{product.name}</p>
-              <p className="text-xs text-ink-muted">
-                {product.category?.name ?? "Sin categoría"} · /{product.slug}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setEditing((v) => !v)}
-              >
-                {editing ? "Cerrar" : "Editar"}
-              </Button>
-              <form action={deleteProductAction}>
-                <input type="hidden" name="id" value={product.id} />
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  size="sm"
-                  className="text-clinical-600"
-                >
-                  Eliminar
-                </Button>
-              </form>
-            </div>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-            <span className="font-medium text-milo-700">
-              {formatCLP(product.price)}
-            </span>
-            <span className="text-ink-muted">Stock: {product.stock}</span>
-            {product.isActive ? (
-              <Badge>Publicado</Badge>
-            ) : (
-              <span className="text-xs font-semibold text-ink-light">Oculto</span>
-            )}
-            {product.isFeatured && (
-              <span className="text-xs text-milo-600">★ Destacado</span>
-            )}
-          </div>
-        </div>
-      </div>
-      {editing && (
-        <ProductEditPanel
-          product={product}
-          categories={categories}
-          onCancel={() => setEditing(false)}
-        />
-      )}
+      </form>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="text-clinical-600"
+        onClick={handleDelete}
+      >
+        Eliminar
+      </Button>
+      <form
+        id={`delete-product-${product.id}`}
+        action={deleteProductAction}
+        className="hidden"
+      >
+        <input type="hidden" name="id" value={product.id} />
+      </form>
     </div>
   );
 }
 
 export function ProductTable({
   products,
-  categories,
+  onEdit,
 }: {
   products: AdminProductRow[];
-  categories: AdminCategoryRow[];
+  onEdit: (product: AdminProductRow) => void;
 }) {
   return (
-    <Card className="bg-surface">
-      <h2 className="text-lg font-bold text-ink">Productos</h2>
-      <p className="mt-1 text-sm text-ink-muted">
-        {products.length} en catálogo — crear, editar y eliminar.
-      </p>
-
-      <div className="mt-6">
-        {products.map((product) => (
-          <ProductRow
-            key={product.id}
-            product={product}
-            categories={categories}
-          />
-        ))}
-        {products.length === 0 && (
-          <p className="py-6 text-sm text-ink-muted">
-            Sin productos. Crea uno arriba o ejecuta{" "}
-            <code className="rounded bg-surface-muted px-1">npm run db:seed</code>
-          </p>
-        )}
+    <div>
+      <div className="border-b border-ink/10 px-6 py-5">
+        <h2 className="text-lg font-bold text-ink">Productos</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          {products.length} en catálogo — gestiona precio, stock y visibilidad.
+        </p>
       </div>
-    </Card>
+
+      {products.length === 0 ? (
+        <p className="px-6 py-10 text-sm text-ink-muted">
+          Sin productos. Usa &quot;Nuevo producto&quot; en la barra superior o ejecuta{" "}
+          <code className="rounded bg-surface-muted px-1">npm run db:seed</code>
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-ink/10 bg-surface-soft text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                <th className="px-6 py-3 font-semibold">Producto</th>
+                <th className="px-4 py-3 font-semibold">Categoría</th>
+                <th className="px-4 py-3 font-semibold">Precio</th>
+                <th className="px-4 py-3 font-semibold">Stock</th>
+                <th className="px-4 py-3 font-semibold">Estado</th>
+                <th className="px-6 py-3 text-right font-semibold">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink/5">
+              {products.map((product) => (
+                <tr
+                  key={product.id}
+                  className={cn(
+                    "transition-colors hover:bg-surface-soft/80",
+                    !product.isActive && "opacity-60",
+                  )}
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-ink/10">
+                        <ProductImage
+                          src={product.imageUrls[0] ?? null}
+                          alt={product.name}
+                          className="h-full w-full rounded-lg"
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-ink">{product.name}</p>
+                        <p className="text-xs text-ink-muted">
+                          /{product.slug} · {petTypeLabel[product.petType]}
+                        </p>
+                        {product.isFeatured && (
+                          <span className="mt-0.5 inline-block text-xs text-milo-600">
+                            ★ Destacado
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-ink-muted">
+                    {product.category?.name ?? "—"}
+                  </td>
+                  <td className="px-4 py-4 font-medium text-milo-700">
+                    {formatCLP(product.price)}
+                  </td>
+                  <td className="px-4 py-4">
+                    <span
+                      className={cn(
+                        product.stock <= 5 && "font-semibold text-clinical-600",
+                      )}
+                    >
+                      {product.stock}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4">
+                    {product.isActive ? (
+                      <Badge>Publicado</Badge>
+                    ) : (
+                      <span className="text-xs font-semibold text-ink-light">
+                        Oculto
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <ProductActions product={product} onEdit={onEdit} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }

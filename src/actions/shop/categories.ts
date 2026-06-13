@@ -23,6 +23,7 @@ async function uniqueCategorySlug(
 
 function revalidateShop() {
   revalidatePath("/admin/tienda");
+  revalidatePath("/admin/tienda/productos");
   revalidatePath("/tienda");
   revalidatePath("/");
 }
